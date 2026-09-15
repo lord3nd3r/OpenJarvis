@@ -397,7 +397,10 @@ jobs:
             echo "latest.json not ready yet (attempt ${attempt}); sleeping 15s"
             sleep 15
           done
-          test -s latest.json || { echo "::error::Could not fetch ${URL}"; exit 1; }
+          if [ ! -s latest.json ]; then
+            echo "latest.json not produced for this release (skipping auto-update channel refresh)."
+            exit 0
+          fi
           # Ensure the channel release exists (prerelease so it never usurps
           # the stable "Latest" badge), then replace its manifest in place.
           if ! gh release view desktop-latest --repo "$REPO" >/dev/null 2>&1; then
