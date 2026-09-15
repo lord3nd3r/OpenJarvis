@@ -30,13 +30,17 @@ _REDACTED_PLACEHOLDER = "***redacted***"
 # Precedence order matters: first match wins.
 # OpenRouter first because one key unlocks the most models; Anthropic
 # next because it's the highest-quality single-provider option; then
-# OpenAI; then Google (with GEMINI_API_KEY as an alias).
+# OpenAI; then Google (with GEMINI_API_KEY as an alias); then the
+# single-vendor OpenAI-compatible providers (xAI, DeepSeek, MiniMax).
 _KEY_TO_PROVIDER: tuple[tuple[str, str], ...] = (
     ("OPENROUTER_API_KEY", "openrouter"),
     ("ANTHROPIC_API_KEY", "anthropic"),
     ("OPENAI_API_KEY", "openai"),
     ("GOOGLE_API_KEY", "google"),
     ("GEMINI_API_KEY", "google"),
+    ("XAI_API_KEY", "xai"),
+    ("DEEPSEEK_API_KEY", "deepseek"),
+    ("MINIMAX_API_KEY", "minimax"),
 )
 
 
@@ -191,6 +195,9 @@ _CLOUD_PROVIDER_DEFAULT_MODELS: dict[str, str] = {
     "anthropic": "claude-opus-4-6",
     "openai": "gpt-5",
     "google": "gemini-3-pro",
+    "xai": "grok-4.6",
+    "deepseek": "deepseek-v4-pro",
+    "minimax": "MiniMax-M3",
 }
 
 

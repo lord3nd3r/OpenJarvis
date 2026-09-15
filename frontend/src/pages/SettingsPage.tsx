@@ -546,6 +546,9 @@ export function SettingsPage() {
                 <CloudProviderStatus label="Anthropic" keyName="ANTHROPIC_API_KEY" />
                 <CloudProviderStatus label="Google" keyName="GEMINI_API_KEY" />
                 <CloudProviderStatus label="OpenRouter" keyName="OPENROUTER_API_KEY" />
+                <CloudProviderStatus label="xAI" keyName="XAI_API_KEY" />
+                <CloudProviderStatus label="DeepSeek" keyName="DEEPSEEK_API_KEY" />
+                <CloudProviderStatus label="MiniMax" keyName="MINIMAX_API_KEY" />
               </div>
             </SettingRow>
           </Section>
@@ -563,6 +566,15 @@ export function SettingsPage() {
             </SettingRow>
             <SettingRow label="OpenRouter" description="Multi-provider routing">
               <ApiKeyInput keyName="OPENROUTER_API_KEY" placeholder="sk-or-..." />
+            </SettingRow>
+            <SettingRow label="xAI" description="Grok models">
+              <ApiKeyInput keyName="XAI_API_KEY" placeholder="xai-..." />
+            </SettingRow>
+            <SettingRow label="DeepSeek" description="DeepSeek V4 models">
+              <ApiKeyInput keyName="DEEPSEEK_API_KEY" placeholder="sk-..." />
+            </SettingRow>
+            <SettingRow label="MiniMax" description="MiniMax M-series models">
+              <ApiKeyInput keyName="MINIMAX_API_KEY" placeholder="eyJ..." />
             </SettingRow>
           </Section>
 

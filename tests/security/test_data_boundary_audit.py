@@ -21,6 +21,7 @@ from openjarvis.security.data_boundary_audit import (
     RUNTIME_CREDENTIAL_ENV_KEYS,
     WEATHER_TOOLS,
     WEB_SEARCH_TOOLS,
+    _looks_like_cloud_model,
     build_data_boundary_report,
 )
 from tests.tools.test_tool_registration import EXPECTED_TOOLS as EXPECTED_BUILTIN_TOOLS
@@ -1409,3 +1410,54 @@ class TestWebSearchDestination:
                     assert labels[resolved] in _web_search_destination(), (
                         f"tavily={tavily} youcom={youcom} engine={engine}"
                     )
+
+
+def test_grok_model_name_looks_like_cloud():
+    """A grok-* model name must read as cloud inference, not local.
+
+    Model-name classification is what catches a cloud target the engine field
+    does not spell out; a local engine still wins (see
+    ``test_local_engine_vendor_model_names_are_not_cloud``).
+    """
+    assert _looks_like_cloud_model("grok-4.6") is True
+    assert _looks_like_cloud_model("grok-build-0.1") is True
+
+
+def test_grok_default_model_on_cloud_engine_is_flagged(tmp_path):
+    config = _low_noise_config()
+    config.engine.default = "cloud"
+    config.intelligence.default_model = "grok-4.6"
+    config.agent.context_from_memory = True
+
+    report = build_data_boundary_report(config, tmp_path)
+
+    findings = {finding.id: finding for finding in report.findings}
+    assert findings["memory-context-to-cloud-risk"].status == "fail"
+
+
+def test_xai_provider_is_classified_as_cloud(tmp_path):
+    config = _low_noise_config()
+    config.intelligence.provider = "xai"
+    config.agent.context_from_memory = True
+
+    report = build_data_boundary_report(config, tmp_path)
+
+    findings = {finding.id: finding for finding in report.findings}
+    assert findings["memory-context-to-cloud-risk"].status == "fail"
+
+
+def test_xai_env_credential_reports_presence_only(tmp_path, monkeypatch):
+    config = _low_noise_config()
+    monkeypatch.setenv("XAI_API_KEY", "xai-secret")
+
+    report = build_data_boundary_report(config, tmp_path)
+
+    findings = {finding.id: finding for finding in report.findings}
+    finding = findings["env-credential-xai_api_key"]
+    assert finding.status == "info"
+    assert "XAI_API_KEY is set" in finding.evidence
+    assert "xai-secret" not in str(report.to_dict(show_paths=True))
+
+
+def test_xai_key_is_registered_in_api_key_env_vars():
+    assert "XAI_API_KEY" in API_KEY_ENV_VARS

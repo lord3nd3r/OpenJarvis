@@ -14,6 +14,8 @@ from openjarvis.engine.cloud import (
     CloudEngine,
     _is_codex_model,
     _is_deepseek_model,
+    _is_grok_model,
+    _is_local_model_tag,
     _is_openai_model,
     _is_openrouter_model,
     estimate_cost,
@@ -462,6 +464,7 @@ class TestCloudEngineCanServe:
             "_openrouter_client",
             "_minimax_client",
             "_deepseek_client",
+            "_xai_client",
             "_codex_client",
         ):
             setattr(eng, name, clients.get(name))
@@ -510,6 +513,22 @@ class TestCloudEngineCanServe:
         eng = self._engine(_anthropic_client=object())
         assert eng.can_serve("claude-sonnet-4") is True
         assert eng.can_serve("gpt-4o") is False
+
+    def test_grok_only_serves_grok_models(self) -> None:
+        """The xAI client serves grok-* models (and only those)."""
+        eng = self._engine(_xai_client=object())
+        assert eng.can_serve("grok-4.6") is True
+        assert eng.can_serve("grok-build-0.1") is True
+        assert eng.can_serve("Grok-4.6") is True  # case-insensitive
+        assert eng.can_serve("gpt-4o") is False
+        assert eng.can_serve("deepseek-v4-pro") is False
+        # OpenRouter-prefixed grok is NOT the direct xAI provider.
+        assert eng.can_serve("openrouter/x-ai/grok-4") is False
+
+    def test_grok_not_served_without_xai_client(self) -> None:
+        """An OpenAI key alone must not make the engine claim grok models."""
+        eng = self._engine(_openai_client=object())
+        assert eng.can_serve("grok-4.6") is False
 
     def test_deepseek_only_serves_deepseek_models(self) -> None:
         """The DeepSeek client serves deepseek-* models (and only those)."""
@@ -625,3 +644,233 @@ class TestCloudEngineDeepSeek:
             engine.generate(
                 [Message(role=Role.USER, content="Hi")], model="deepseek-v4-pro"
             )
+
+
+class TestCloudEngineGrok:
+    """xAI (Grok) as a first-class cloud provider (OpenAI-compatible)."""
+
+    def test_is_grok_model_predicate(self) -> None:
+        assert _is_grok_model("grok-4.6") is True
+        assert _is_grok_model("grok-4.20-0309-reasoning") is True
+        assert _is_grok_model("grok-build-0.1") is True
+        assert _is_grok_model("Grok-4.6") is True  # case-insensitive
+        assert _is_grok_model("gpt-4o") is False
+        assert _is_grok_model("deepseek-v4-pro") is False
+        # No predicate collision: openrouter/x-ai/grok-* belongs to OpenRouter.
+        assert _is_grok_model("openrouter/x-ai/grok-4") is False
+        assert _is_openrouter_model("openrouter/x-ai/grok-4") is True
+        # And a grok name is not mistaken for an OpenAI model.
+        assert _is_openai_model("grok-4.6") is False
+
+    def test_pricing_short_context_tier(self) -> None:
+        """Prompts under 200k bill at the standard rate."""
+        assert estimate_cost("grok-4.6", 100_000, 10_000) == pytest.approx(
+            0.26  # 100k * 2.00/M + 10k * 6.00/M
+        )
+        assert estimate_cost("grok-4.3", 100_000, 10_000) == pytest.approx(
+            0.15  # 100k * 1.25/M + 10k * 2.50/M
+        )
+        assert estimate_cost("grok-build-0.1", 100_000, 10_000) == pytest.approx(
+            0.12  # 100k * 1.00/M + 10k * 2.00/M
+        )
+
+    def test_pricing_long_context_tier(self) -> None:
+        """Crossing 200k re-bills the whole request at the higher tier."""
+        assert estimate_cost("grok-4.6", 300_000, 1_000) == pytest.approx(
+            1.212  # 300k * 4.00/M + 1k * 12.00/M
+        )
+        assert estimate_cost("grok-4.3", 300_000, 1_000) == pytest.approx(
+            0.755  # 300k * 2.50/M + 1k * 5.00/M
+        )
+
+    def test_pricing_long_context_matches_dated_variant_by_prefix(self) -> None:
+        """A dated model id falls back to its family's long-context rate."""
+        assert estimate_cost("grok-4.6-0812", 300_000, 1_000) == pytest.approx(1.212)
+
+    def test_init_wires_xai_client(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """XAI_API_KEY builds an openai client pointed at api.x.ai."""
+        for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("XAI_API_KEY", "xai-test")
+
+        fake_openai = mock.MagicMock()
+        with mock.patch.dict("sys.modules", {"openai": fake_openai}):
+            EngineRegistry.register_value("cloud", CloudEngine)
+            engine = CloudEngine()
+
+        fake_openai.OpenAI.assert_any_call(
+            base_url="https://api.x.ai/v1",
+            api_key="xai-test",
+        )
+        assert engine._xai_client is not None
+
+    def test_health_and_list_models_gated_on_xai_key(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("XAI_API_KEY", "xai-test")
+
+        fake_openai = mock.MagicMock()
+        with mock.patch.dict("sys.modules", {"openai": fake_openai}):
+            EngineRegistry.register_value("cloud", CloudEngine)
+            engine = CloudEngine()
+
+        assert engine.health() is True
+        models = engine.list_models()
+        assert "grok-4.6" in models
+        assert "grok-build-0.1" in models
+        # can_serve must agree with list_models.
+        for model in models:
+            assert engine.can_serve(model) is True
+
+    def test_generate_routes_to_xai_client(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+
+        fake_usage = SimpleNamespace(
+            prompt_tokens=11, completion_tokens=4, total_tokens=15
+        )
+        fake_choice = SimpleNamespace(
+            message=SimpleNamespace(content="grok-hello"),
+            finish_reason="stop",
+        )
+        fake_resp = SimpleNamespace(
+            choices=[fake_choice], usage=fake_usage, model="grok-4.6"
+        )
+        fake_client = mock.MagicMock()
+        fake_client.chat.completions.create.return_value = fake_resp
+
+        EngineRegistry.register_value("cloud", CloudEngine)
+        engine = CloudEngine()
+        engine._xai_client = fake_client
+
+        result = engine.generate(
+            [Message(role=Role.USER, content="Hi")], model="grok-4.6"
+        )
+        assert result["content"] == "grok-hello"
+        assert result["usage"]["prompt_tokens"] == 11
+        assert result["cost_usd"] == pytest.approx(11 * 2.00 / 1e6 + 4 * 6.00 / 1e6)
+        # Routed to the xAI client, not OpenAI.
+        fake_client.chat.completions.create.assert_called_once()
+        assert fake_client.chat.completions.create.call_args.kwargs["model"] == (
+            "grok-4.6"
+        )
+
+    def test_generate_parses_tool_calls(self) -> None:
+        """Grok returns OpenAI-shaped tool_calls; they surface in the result."""
+        fake_tool_call = SimpleNamespace(
+            id="call_x",
+            function=SimpleNamespace(name="get_weather", arguments='{"city": "NYC"}'),
+        )
+        fake_choice = SimpleNamespace(
+            message=SimpleNamespace(content=None, tool_calls=[fake_tool_call]),
+            finish_reason="tool_calls",
+        )
+        fake_resp = SimpleNamespace(
+            choices=[fake_choice],
+            usage=SimpleNamespace(prompt_tokens=5, completion_tokens=2, total_tokens=7),
+            model="grok-4.6",
+        )
+        fake_client = mock.MagicMock()
+        fake_client.chat.completions.create.return_value = fake_resp
+
+        EngineRegistry.register_value("cloud", CloudEngine)
+        engine = CloudEngine()
+        engine._xai_client = fake_client
+
+        result = engine.generate(
+            [Message(role=Role.USER, content="weather?")], model="grok-4.6"
+        )
+        assert result["tool_calls"][0]["id"] == "call_x"
+        assert result["tool_calls"][0]["name"] == "get_weather"
+        assert result["tool_calls"][0]["arguments"] == '{"city": "NYC"}'
+
+    def test_generate_without_client_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        EngineRegistry.register_value("cloud", CloudEngine)
+        engine = CloudEngine()
+        assert engine._xai_client is None
+        with pytest.raises(EngineConnectionError):
+            engine.generate([Message(role=Role.USER, content="Hi")], model="grok-4.6")
+
+    def test_close_releases_xai_client(self) -> None:
+        EngineRegistry.register_value("cloud", CloudEngine)
+        engine = CloudEngine()
+        fake_client = mock.MagicMock()
+        engine._xai_client = fake_client
+        engine.close()
+        fake_client.close.assert_called_once()
+        assert engine._xai_client is None
+
+
+class TestLocalModelTagIsNotCloud:
+    """Vendor-named local distills must never be claimed by the cloud engine.
+
+    DeepSeek and xAI both ship open weights that Ollama serves under the
+    vendor's own name, so a bare ``deepseek``/``grok`` prefix match would
+    repeat #335: the cloud engine claiming a local model because a key for
+    that vendor happens to be set.
+    """
+
+    @staticmethod
+    def _engine(**clients: object) -> CloudEngine:
+        eng = CloudEngine.__new__(CloudEngine)
+        for name in (
+            "_openai_client",
+            "_anthropic_client",
+            "_google_client",
+            "_openrouter_client",
+            "_minimax_client",
+            "_deepseek_client",
+            "_xai_client",
+            "_codex_client",
+        ):
+            setattr(eng, name, clients.get(name))
+        return eng
+
+    def test_local_tag_predicate(self) -> None:
+        assert _is_local_model_tag("deepseek-r1:7b") is True
+        assert _is_local_model_tag("qwen3.5:0.8b") is True
+        assert _is_local_model_tag("deepseek-v4-pro") is False
+        assert _is_local_model_tag("grok-4.6") is False
+
+    @pytest.mark.parametrize(
+        "model",
+        ["deepseek-r1:7b", "deepseek-r1:14b", "deepseek-coder-v2:16b"],
+    )
+    def test_ollama_deepseek_distills_are_not_cloud_deepseek(self, model) -> None:
+        assert _is_deepseek_model(model) is False
+        eng = self._engine(_deepseek_client=object())
+        assert eng.can_serve(model) is False
+
+    def test_ollama_grok_tag_is_not_cloud_grok(self) -> None:
+        assert _is_grok_model("grok-2:latest") is False
+        eng = self._engine(_xai_client=object())
+        assert eng.can_serve("grok-2:latest") is False
+
+    def test_cloud_ids_still_route(self) -> None:
+        """The guard must not cost us the real cloud model IDs."""
+        assert _is_deepseek_model("deepseek-v4-pro") is True
+        assert _is_grok_model("grok-4.6") is True
+        eng = self._engine(_deepseek_client=object(), _xai_client=object())
+        assert eng.can_serve("deepseek-v4-pro") is True
+        assert eng.can_serve("grok-4.6") is True
+
+    def test_no_client_claims_a_local_model(self) -> None:
+        """With every provider client configured, a local tag is still local."""
+        eng = self._engine(
+            _openai_client=object(),
+            _anthropic_client=object(),
+            _google_client=object(),
+            _minimax_client=object(),
+            _deepseek_client=object(),
+            _xai_client=object(),
+        )
+        for model in ("deepseek-r1:7b", "qwen3.5:0.8b", "grok-2:latest"):
+            assert eng.can_serve(model) is False

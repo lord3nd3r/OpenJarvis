@@ -26,10 +26,12 @@ CLOUD_PROVIDER_KEYS = {
     "deepseek",
     "gemini",
     "google",
+    "grok",
     "litellm",
     "minimax",
     "openai",
     "openrouter",
+    "xai",
 }
 
 LOCAL_ENGINE_KEYS = {
@@ -68,6 +70,7 @@ API_KEY_ENV_VARS = {
         {"get_weather", "openweathermap", "weather"},
     ),
     "TAVILY_API_KEY": ("Tavily web search", {"tavily", "web_search"}),
+    "XAI_API_KEY": ("xAI/Grok cloud inference", {"grok", "xai"}),
     "YOUDOTCOM_API_KEY": ("You.com web search", {"youcom", "web_search"}),
 }
 

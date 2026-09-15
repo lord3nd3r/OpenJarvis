@@ -953,6 +953,186 @@ BUILTIN_MODELS: List[ModelSpec] = [
         },
     ),
     # -----------------------------------------------------------------------
+    # Cloud models — DeepSeek
+    #
+    # Note the plain ``deepseek-v4-*`` IDs: these are the direct-API cloud
+    # models. The Ollama-tagged distills above (``deepseek-r1:7b``) are local
+    # and must not be confused with them — see
+    # ``engine/cloud.py:_is_local_model_tag``.
+    # -----------------------------------------------------------------------
+    ModelSpec(
+        model_id="deepseek-v4-flash",
+        name="DeepSeek V4 Flash",
+        parameter_count_b=0.0,
+        context_length=131_072,
+        supported_engines=("cloud",),
+        provider="deepseek",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "DEEPSEEK_API_KEY",
+            "pricing_input": 0.27,
+            "pricing_output": 1.10,
+            "url": "https://api-docs.deepseek.com/quick_start/pricing",
+        },
+    ),
+    ModelSpec(
+        model_id="deepseek-v4-pro",
+        name="DeepSeek V4 Pro",
+        parameter_count_b=0.0,
+        context_length=131_072,
+        supported_engines=("cloud",),
+        provider="deepseek",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "DEEPSEEK_API_KEY",
+            "pricing_input": 0.55,
+            "pricing_output": 2.19,
+            "url": "https://api-docs.deepseek.com/quick_start/pricing",
+        },
+    ),
+    # -----------------------------------------------------------------------
+    # Cloud models — xAI (Grok)
+    #
+    # xAI bills a request whose prompt crosses 200k tokens at the higher tier
+    # in full, mirroring MiniMax-M3's long-context pricing above; see
+    # ``_GROK_LONG_CONTEXT_PRICING`` in ``engine/cloud.py``.
+    # -----------------------------------------------------------------------
+    ModelSpec(
+        model_id="grok-4.6",
+        name="Grok 4.6",
+        parameter_count_b=0.0,
+        context_length=500_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 2.00,
+            "pricing_output": 6.00,
+            "pricing_long_context_input": 4.00,
+            "pricing_long_context_output": 12.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-4.5",
+        name="Grok 4.5",
+        parameter_count_b=0.0,
+        context_length=500_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 2.00,
+            "pricing_output": 6.00,
+            "pricing_long_context_input": 4.00,
+            "pricing_long_context_output": 12.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-4.3",
+        name="Grok 4.3",
+        parameter_count_b=0.0,
+        context_length=1_000_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 1.25,
+            "pricing_output": 2.50,
+            "pricing_long_context_input": 2.50,
+            "pricing_long_context_output": 5.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-4.20-0309-reasoning",
+        name="Grok 4.20 Reasoning",
+        parameter_count_b=0.0,
+        context_length=1_000_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 1.25,
+            "pricing_output": 2.50,
+            "pricing_long_context_input": 2.50,
+            "pricing_long_context_output": 5.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-4.20-0309-non-reasoning",
+        name="Grok 4.20 Non-Reasoning",
+        parameter_count_b=0.0,
+        context_length=1_000_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 1.25,
+            "pricing_output": 2.50,
+            "pricing_long_context_input": 2.50,
+            "pricing_long_context_output": 5.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-4.20-multi-agent-0309",
+        name="Grok 4.20 Multi-Agent",
+        parameter_count_b=0.0,
+        context_length=1_000_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 1.25,
+            "pricing_output": 2.50,
+            "pricing_long_context_input": 2.50,
+            "pricing_long_context_output": 5.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    ModelSpec(
+        model_id="grok-build-0.1",
+        name="Grok Build 0.1",
+        parameter_count_b=0.0,
+        context_length=256_000,
+        supported_engines=("cloud",),
+        provider="xai",
+        requires_api_key=True,
+        metadata={
+            "architecture": "proprietary",
+            "auth": "XAI_API_KEY",
+            "pricing_input": 1.00,
+            "pricing_output": 2.00,
+            "pricing_long_context_input": 2.00,
+            "pricing_long_context_output": 4.00,
+            "pricing_long_context_threshold": 200_000,
+            "url": "https://docs.x.ai/docs/models",
+        },
+    ),
+    # -----------------------------------------------------------------------
     # Cloud models — Google
     # -----------------------------------------------------------------------
     ModelSpec(

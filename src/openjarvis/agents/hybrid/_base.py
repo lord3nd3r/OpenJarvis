@@ -711,6 +711,98 @@ class LocalCloudAgent(BaseAgent):
         return text, p, c
 
     @staticmethod
+    def _call_grok(
+        model: str,
+        *,
+        user: str,
+        system: Optional[str] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.0,
+        response_format: Optional[dict] = None,
+        tools: Optional[list] = None,
+        tool_choice: Optional[Any] = None,
+        timeout: float = 600.0,
+        trace_role: str = "cloud",
+    ) -> Tuple[str, int, int]:
+        """Single xAI (Grok) call. Returns (text, p_tok, c_tok).
+
+        xAI is OpenAI-API-compatible, so this uses the OpenAI SDK with a
+        custom ``base_url`` and ``XAI_API_KEY`` — the same shape as
+        ``_call_openrouter``. ``model`` is a bare xAI ID (``"grok-4.6"``);
+        unlike OpenRouter there is no routing prefix to strip.
+
+        No rate limiter: ``_OpenRouterLimiter`` exists to protect a shared
+        OpenRouter account's concurrency/RPM caps, which are a property of
+        that account rather than of OpenAI-compatible endpoints in general.
+
+        Tool calls and ``response_format`` pass straight through, matching
+        ``_call_openai`` — xAI implements both. Trace events use
+        ``"kind": "grok"`` so the dashboard can tell them apart from native
+        OpenAI calls.
+        """
+        from openai import OpenAI
+
+        api_key = os.environ.get("XAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("XAI_API_KEY is not set; cannot call xAI.")
+        client = OpenAI(
+            base_url="https://api.x.ai/v1",
+            api_key=api_key,
+            timeout=timeout,
+        )
+        messages: list = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": user})
+        kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if response_format is not None:
+            kwargs["response_format"] = response_format
+        if tools:
+            kwargs["tools"] = tools
+        if tool_choice is not None:
+            kwargs["tool_choice"] = tool_choice
+        t0 = time.time()
+        resp = client.chat.completions.create(**kwargs)
+        _bump_cloud_calls()
+        latency = time.time() - t0
+        choice = resp.choices[0]
+        message = choice.message
+        text = message.content or ""
+        tool_calls = _serialize_openai_tool_calls(getattr(message, "tool_calls", None))
+        reasoning = getattr(message, "reasoning_content", None) or getattr(
+            message, "reasoning", None
+        )
+        u = resp.usage
+        p = getattr(u, "prompt_tokens", 0) if u else 0
+        c = getattr(u, "completion_tokens", 0) if u else 0
+        _record_event(
+            {
+                "kind": "grok",
+                "role": trace_role,
+                "model": model,
+                "system": system,
+                "user": user,
+                "response": text,
+                "tool_calls": tool_calls,
+                "reasoning_content": reasoning,
+                "tokens_in": p,
+                "tokens_out": c,
+                "response_format": response_format,
+                "tools_declared": tools,
+                "tool_choice": tool_choice,
+                "finish_reason": getattr(choice, "finish_reason", None),
+                "latency_s": latency,
+                "ts": time.time(),
+            }
+        )
+        return text, p, c
+
+    @staticmethod
     def _call_gemini(
         model: str,
         *,
@@ -1231,6 +1323,15 @@ class LocalCloudAgent(BaseAgent):
             return text, p, c
         if self._cloud_endpoint == "openai":
             return self._call_openai(
+                self._cloud_model,
+                user=user,
+                system=system,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                **kwargs,
+            )
+        if self._cloud_endpoint == "xai":
+            return self._call_grok(
                 self._cloud_model,
                 user=user,
                 system=system,

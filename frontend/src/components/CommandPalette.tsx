@@ -71,6 +71,32 @@ const CLOUD_PROVIDERS: CloudProvider[] = [
       { id: 'openrouter/deepseek/deepseek-r1', desc: 'DeepSeek R1 via OpenRouter' },
     ],
   },
+  {
+    name: 'xAI',
+    envKey: 'XAI_API_KEY',
+    models: [
+      { id: 'grok-4.6', desc: 'Grok 4.6 — flagship, 500k context' },
+      { id: 'grok-4.3', desc: 'Grok 4.3 — 1M context, cheaper' },
+      { id: 'grok-build-0.1', desc: 'Grok Build 0.1 — coding' },
+    ],
+  },
+  {
+    name: 'DeepSeek',
+    envKey: 'DEEPSEEK_API_KEY',
+    models: [
+      { id: 'deepseek-v4-pro', desc: 'DeepSeek V4 Pro — most capable' },
+      { id: 'deepseek-v4-flash', desc: 'DeepSeek V4 Flash — cheap, fast' },
+    ],
+  },
+  {
+    name: 'MiniMax',
+    envKey: 'MINIMAX_API_KEY',
+    models: [
+      { id: 'MiniMax-M3', desc: 'MiniMax M3 — 1M context' },
+      { id: 'MiniMax-M2.7', desc: 'MiniMax M2.7 — balanced' },
+      { id: 'MiniMax-M2.7-highspeed', desc: 'MiniMax M2.7 — high speed' },
+    ],
+  },
 ];
 
 type Tab = 'installed' | 'catalogue' | 'cloud';

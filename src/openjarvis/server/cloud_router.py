@@ -27,6 +27,15 @@ _OPENAI_PREFIXES = ("gpt-", "o1-", "o3-", "o4-", "chatgpt-")
 _ANTHROPIC_PREFIXES = ("claude-",)
 _GOOGLE_PREFIXES = ("gemini-",)
 _MINIMAX_PREFIXES = ("MiniMax-",)
+_GROK_PREFIXES = ("grok-",)
+_DEEPSEEK_PREFIXES = ("deepseek-",)
+
+# Ollama tags local models as ``<name>:<tag>``; no cloud model ID contains a
+# colon. DeepSeek and xAI both ship open weights that Ollama serves under the
+# vendor's own name (``deepseek-r1:7b``), so a vendor-prefix match alone would
+# route a local model to the cloud API. Kept in sync with
+# ``engine/cloud.py:_is_local_model_tag``.
+_LOCAL_TAG_SEPARATOR = ":"
 
 # HuggingFace orgs that host local-only quantised models — never route to cloud.
 _LOCAL_HF_ORGS = (
@@ -55,6 +64,8 @@ def _load_keys() -> dict[str, str]:
         "GOOGLE_API_KEY",
         "OPENROUTER_API_KEY",
         "MINIMAX_API_KEY",
+        "XAI_API_KEY",
+        "DEEPSEEK_API_KEY",
     ):
         val = os.environ.get(name)
         if val:
@@ -64,6 +75,8 @@ def _load_keys() -> dict[str, str]:
 
 def get_provider(model: str) -> str | None:
     """Return the provider for a model name, or None if it's a local model."""
+    if _LOCAL_TAG_SEPARATOR in model:
+        return None  # Ollama-tagged local model (e.g. "deepseek-r1:7b")
     if any(model.startswith(p) for p in _OPENAI_PREFIXES):
         return "openai"
     if any(model.startswith(p) for p in _ANTHROPIC_PREFIXES):
@@ -72,6 +85,10 @@ def get_provider(model: str) -> str | None:
         return "google"
     if any(model.startswith(p) for p in _MINIMAX_PREFIXES):
         return "minimax"
+    if any(model.startswith(p) for p in _GROK_PREFIXES):
+        return "xai"
+    if any(model.startswith(p) for p in _DEEPSEEK_PREFIXES):
+        return "deepseek"
     if any(model.startswith(org) for org in _LOCAL_HF_ORGS):
         return None  # local model, never route to cloud
     if "/" in model:  # openrouter format: "meta-llama/llama-3-8b"
@@ -403,6 +420,38 @@ async def stream_cloud(
             max_tokens,
             base_url="https://api.minimax.io/v1",
             api_key_name="MINIMAX_API_KEY",
+        ):
+            yield token
+
+    elif provider == "xai":
+        keys = _load_keys()
+        api_key = keys.get("XAI_API_KEY", "")
+        if not api_key:
+            raise ValueError("XAI_API_KEY not set — add it in the Cloud Models tab")
+        async for token in _stream_openai(
+            model,
+            messages,
+            temperature,
+            max_tokens,
+            base_url="https://api.x.ai/v1",
+            api_key_name="XAI_API_KEY",
+        ):
+            yield token
+
+    elif provider == "deepseek":
+        keys = _load_keys()
+        api_key = keys.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            raise ValueError(
+                "DEEPSEEK_API_KEY not set — add it in the Cloud Models tab"
+            )
+        async for token in _stream_openai(
+            model,
+            messages,
+            temperature,
+            max_tokens,
+            base_url="https://api.deepseek.com/v1",
+            api_key_name="DEEPSEEK_API_KEY",
         ):
             yield token
 

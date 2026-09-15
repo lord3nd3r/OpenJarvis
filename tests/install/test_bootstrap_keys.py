@@ -12,6 +12,9 @@ ALL_KEYS = (
     "OPENAI_API_KEY",
     "GOOGLE_API_KEY",
     "GEMINI_API_KEY",
+    "XAI_API_KEY",
+    "DEEPSEEK_API_KEY",
+    "MINIMAX_API_KEY",
 )
 
 
@@ -60,6 +63,52 @@ def test_gemini_alias(monkeypatch: pytest.MonkeyPatch) -> None:
     p = _bootstrap.detect_cloud_keys()
     assert p is not None
     assert p.provider == "google"
+
+
+def test_xai_alone(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XAI_API_KEY", "xai-test")
+    p = _bootstrap.detect_cloud_keys()
+    assert p is not None
+    assert p.provider == "xai"
+    assert p.env_var == "XAI_API_KEY"
+
+
+def test_deepseek_alone(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-ds-test")
+    p = _bootstrap.detect_cloud_keys()
+    assert p is not None
+    assert p.provider == "deepseek"
+
+
+def test_minimax_alone(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MINIMAX_API_KEY", "mm-test")
+    p = _bootstrap.detect_cloud_keys()
+    assert p is not None
+    assert p.provider == "minimax"
+
+
+def test_multi_vendor_keys_do_not_outrank_the_big_four(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Single-vendor providers sit at the tail of the precedence order."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    monkeypatch.setenv("XAI_API_KEY", "xai-test")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-ds-test")
+    monkeypatch.setenv("MINIMAX_API_KEY", "mm-test")
+    p = _bootstrap.detect_cloud_keys()
+    assert p is not None
+    assert p.provider == "anthropic"
+
+
+def test_xai_has_a_default_cloud_model() -> None:
+    """Every detectable provider needs a default model.
+
+    ``bootstrap_cmd`` forces ``engine="cloud"`` once a key is detected but
+    falls back to the *locally* recommended model on a map miss, which would
+    pair the cloud engine with an Ollama model id.
+    """
+    for _, provider in _bootstrap._KEY_TO_PROVIDER:
+        assert provider in _bootstrap._CLOUD_PROVIDER_DEFAULT_MODELS
 
 
 def test_precedence_openrouter_over_others(monkeypatch: pytest.MonkeyPatch) -> None:

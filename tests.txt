@@ -1,0 +1,512 @@
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [  9%]
+........................................................................ [ 10%]
+..................................................s..................... [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 14%]
+........................................................................ [ 15%]
+.............................................................s.......... [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+............................s........................................... [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 24%]
+..............................s......................................... [ 25%]
+........................................................................ [ 26%]
+......................................ss................................ [ 27%]
+........................................................................ [ 28%]
+.............................................FFFF....................... [ 29%]
+......................................................ss................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 34%]
+........................s............................................... [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 38%]
+...............................FFFF..................................... [ 39%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+..........................ss.......sss..................FFFFF........... [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+..........sss........................................................... [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+........................................................................ [ 48%]
+..........................................ss............................ [ 49%]
+............................................................sss...sss... [ 49%]
+..............................................sss....................... [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+................................................................ssss.... [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 58%]
+......................................sss............................... [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 63%]
+....................................................................s.s. [ 63%]
+.........ss.ssssss.........s....................s....................... [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 67%]
+.s...................................................................... [ 68%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................sssssss......................... [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+.............................................FFFF....................... [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 83%]
+........................................................................ [ 83%]
+........................................................................ [ 84%]
+.............................s.......................................... [ 85%]
+........................................................................ [ 86%]
+........................................................................ [ 87%]
+........................................................................ [ 88%]
+..............................................................s......... [ 88%]
+............................................................sssssssss... [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+........................................................................ [ 93%]
+........................................................................ [ 94%]
+.........................................................s....ss..s..... [ 95%]
+..ss.................................................................... [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+.........................                                                [100%]
+=================================== FAILURES ===================================
+___________________ TestOuraLive.test_sync_returns_documents ___________________
+tests/connectors/test_new_connectors_live.py:21: in test_sync_returns_documents
+    docs = list(conn.sync(since=datetime.now() - timedelta(days=1)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/oura.py:79: in sync
+    token = self._load_token()
+            ^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/oura.py:52: in _load_token
+    data = json.loads(self._token_path.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/openjarvis-test-home-gdqclql6/connectors/oura.json'
+__________________ TestStravaLive.test_sync_returns_documents __________________
+tests/connectors/test_new_connectors_live.py:33: in test_sync_returns_documents
+    docs = list(conn.sync(since=datetime.now() - timedelta(days=7)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/strava.py:147: in sync
+    token = self._get_access_token()
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/strava.py:77: in _get_access_token
+    tokens = self._load_tokens()
+             ^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/strava.py:69: in _load_tokens
+    return json.loads(self._token_path.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/openjarvis-test-home-gdqclql6/connectors/strava.json'
+_________________ TestSpotifyLive.test_sync_returns_documents __________________
+tests/connectors/test_new_connectors_live.py:44: in test_sync_returns_documents
+    docs = list(conn.sync(since=datetime.now() - timedelta(days=1)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/spotify.py:123: in sync
+    token = self._get_access_token()
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/spotify.py:54: in _get_access_token
+    return self._load_tokens()["access_token"]
+           ^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/spotify.py:51: in _load_tokens
+    return json.loads(self._token_path.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/openjarvis-test-home-gdqclql6/connectors/spotify.json'
+_______________ TestGoogleTasksLive.test_sync_returns_documents ________________
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:101: in map_httpcore_exceptions
+    yield
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:250: in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py:256: in handle_request
+    raise exc from None
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py:236: in handle_request
+    response = connection.handle_request(
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection.py:103: in handle_request
+    return self._connection.handle_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:136: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:86: in handle_request
+    self._send_request_headers(**kwargs)
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:144: in _send_request_headers
+    with map_exceptions({h11.LocalProtocolError: LocalProtocolError}):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+.venv/lib/python3.12/site-packages/httpcore/_exceptions.py:14: in map_exceptions
+    raise to_exc(exc) from exc
+E   httpcore.LocalProtocolError: Illegal header value b'Bearer '
+
+The above exception was the direct cause of the following exception:
+tests/connectors/test_new_connectors_live.py:55: in test_sync_returns_documents
+    docs = list(conn.sync(since=datetime.now() - timedelta(days=7)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/google_tasks.py:75: in sync
+    task_lists = call_with_refresh(
+src/openjarvis/connectors/google_auth.py:113: in call_with_refresh
+    return api_fn(token, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/connectors/google_tasks.py:28: in _tasks_api_get
+    resp = httpx.get(
+.venv/lib/python3.12/site-packages/httpx/_api.py:195: in get
+    return request(
+.venv/lib/python3.12/site-packages/httpx/_api.py:109: in request
+    return client.request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:249: in handle_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:118: in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+E   httpx.LocalProtocolError: Illegal header value b'Bearer '
+_____________ TestGemmaCppLive.test_real_inference_produces_output _____________
+tests/engine/test_gemma_cpp.py:388: in test_real_inference_produces_output
+    result = engine.generate(
+src/openjarvis/engine/gemma_cpp.py:101: in generate
+    self._ensure_loaded()
+src/openjarvis/engine/gemma_cpp.py:67: in _ensure_loaded
+    raise FileNotFoundError(
+E   FileNotFoundError: gemma.cpp model_path not configured. Download weights from Kaggle and set GEMMA_CPP_MODEL_PATH or configure [engine.gemma_cpp] in ~/.openjarvis/config.toml
+______________ TestGemmaCppLive.test_prepare_and_close_lifecycle _______________
+tests/engine/test_gemma_cpp.py:398: in test_prepare_and_close_lifecycle
+    engine.prepare(model_type)
+src/openjarvis/engine/gemma_cpp.py:86: in prepare
+    self._ensure_loaded()
+src/openjarvis/engine/gemma_cpp.py:67: in _ensure_loaded
+    raise FileNotFoundError(
+E   FileNotFoundError: gemma.cpp model_path not configured. Download weights from Kaggle and set GEMMA_CPP_MODEL_PATH or configure [engine.gemma_cpp] in ~/.openjarvis/config.toml
+_________________ TestGemmaCppLive.test_stream_yields_content __________________
+tests/engine/test_gemma_cpp.py:407: in test_stream_yields_content
+    async for chunk in engine.stream(
+src/openjarvis/engine/gemma_cpp.py:140: in stream
+    self._ensure_loaded()
+src/openjarvis/engine/gemma_cpp.py:67: in _ensure_loaded
+    raise FileNotFoundError(
+E   FileNotFoundError: gemma.cpp model_path not configured. Download weights from Kaggle and set GEMMA_CPP_MODEL_PATH or configure [engine.gemma_cpp] in ~/.openjarvis/config.toml
+_______________ TestGemmaCppLive.test_token_counts_are_positive ________________
+tests/engine/test_gemma_cpp.py:417: in test_token_counts_are_positive
+    result = engine.generate(
+src/openjarvis/engine/gemma_cpp.py:101: in generate
+    self._ensure_loaded()
+src/openjarvis/engine/gemma_cpp.py:67: in _ensure_loaded
+    raise FileNotFoundError(
+E   FileNotFoundError: gemma.cpp model_path not configured. Download weights from Kaggle and set GEMMA_CPP_MODEL_PATH or configure [engine.gemma_cpp] in ~/.openjarvis/config.toml
+____________ TestRunOneShot.test_successful_run_returns_parsed_json ____________
+tests/evals/comparison/test_subprocess_runner.py:68: in test_successful_run_returns_parsed_json
+    result = run_one_shot(
+src/openjarvis/evals/backends/external/_subprocess_runner.py:80: in run_one_shot
+    sampler = _start_sampler()
+              ^^^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:303: in _start_sampler
+    s = try_fn()
+        ^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:290: in _try_start_rapl
+    s = _RaplSampler()
+        ^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:278: in __init__
+    self._last_uj = int(rapl_path.read_text().strip())
+                        ^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/sys/class/powercap/intel-rapl:0/energy_uj'
+________________ TestRunOneShot.test_nonzero_exit_records_crash ________________
+tests/evals/comparison/test_subprocess_runner.py:86: in test_nonzero_exit_records_crash
+    result = run_one_shot(
+src/openjarvis/evals/backends/external/_subprocess_runner.py:80: in run_one_shot
+    sampler = _start_sampler()
+              ^^^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:303: in _start_sampler
+    s = try_fn()
+        ^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:290: in _try_start_rapl
+    s = _RaplSampler()
+        ^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:278: in __init__
+    self._last_uj = int(rapl_path.read_text().strip())
+                        ^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/sys/class/powercap/intel-rapl:0/energy_uj'
+__________________ TestRunOneShot.test_timeout_kills_process ___________________
+tests/evals/comparison/test_subprocess_runner.py:109: in test_timeout_kills_process
+    result = run_one_shot(
+src/openjarvis/evals/backends/external/_subprocess_runner.py:80: in run_one_shot
+    sampler = _start_sampler()
+              ^^^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:303: in _start_sampler
+    s = try_fn()
+        ^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:290: in _try_start_rapl
+    s = _RaplSampler()
+        ^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:278: in __init__
+    self._last_uj = int(rapl_path.read_text().strip())
+                        ^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/sys/class/powercap/intel-rapl:0/energy_uj'
+_________________ TestRunOneShot.test_malformed_json_recorded __________________
+tests/evals/comparison/test_subprocess_runner.py:127: in test_malformed_json_recorded
+    result = run_one_shot(
+src/openjarvis/evals/backends/external/_subprocess_runner.py:80: in run_one_shot
+    sampler = _start_sampler()
+              ^^^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:303: in _start_sampler
+    s = try_fn()
+        ^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:290: in _try_start_rapl
+    s = _RaplSampler()
+        ^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:278: in __init__
+    self._last_uj = int(rapl_path.read_text().strip())
+                        ^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/sys/class/powercap/intel-rapl:0/energy_uj'
+_______________ TestRunOneShot.test_missing_output_json_recorded _______________
+tests/evals/comparison/test_subprocess_runner.py:143: in test_missing_output_json_recorded
+    result = run_one_shot(
+src/openjarvis/evals/backends/external/_subprocess_runner.py:80: in run_one_shot
+    sampler = _start_sampler()
+              ^^^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:303: in _start_sampler
+    s = try_fn()
+        ^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:290: in _try_start_rapl
+    s = _RaplSampler()
+        ^^^^^^^^^^^^^^
+src/openjarvis/evals/backends/external/_subprocess_runner.py:278: in __init__
+    self._last_uj = int(rapl_path.read_text().strip())
+                        ^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/sys/class/powercap/intel-rapl:0/energy_uj'
+_______ TestSkillSystemIntegration.test_system_builder_discovers_skills ________
+tests/skills/test_integration_live.py:23: in test_system_builder_discovers_skills
+    system = SystemBuilder().engine("ollama").model("qwen3.5:4b").build()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/system/builder.py:123: in build
+    system = self._build()
+             ^^^^^^^^^^^^^
+src/openjarvis/system/builder.py:147: in _build
+    engine, engine_key = self._resolve_engine(config)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/system/builder.py:394: in _resolve_engine
+    raise RuntimeError(
+E   RuntimeError: No inference engine available. Make sure an engine is running (e.g. ollama serve).
+------------------------------ Captured log call -------------------------------
+WARNING  openjarvis.engine._discovery:_discovery.py:203 Requested engine 'ollama' is not registered
+________ TestSkillSystemIntegration.test_skill_catalog_in_system_prompt ________
+tests/skills/test_integration_live.py:51: in test_skill_catalog_in_system_prompt
+    assert "research-and-summarize" in catalog
+E   AssertionError: assert 'research-and-summarize' in '<available_skills>\n</available_skills>'
+____ TestSkillSystemIntegration.test_skill_tool_invocation_returns_content _____
+tests/skills/test_integration_live.py:69: in test_skill_tool_invocation_returns_content
+    assert code_explainer is not None, "code-explainer skill should exist"
+E   AssertionError: code-explainer skill should exist
+E   assert None is not None
+_______ TestSkillSystemIntegration.test_agent_ask_with_skills_available ________
+tests/skills/test_integration_live.py:96: in test_agent_ask_with_skills_available
+    .build()
+     ^^^^^^^
+src/openjarvis/system/builder.py:123: in build
+    system = self._build()
+             ^^^^^^^^^^^^^
+src/openjarvis/system/builder.py:147: in _build
+    engine, engine_key = self._resolve_engine(config)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/openjarvis/system/builder.py:394: in _resolve_engine
+    raise RuntimeError(
+E   RuntimeError: No inference engine available. Make sure an engine is running (e.g. ollama serve).
+------------------------------ Captured log call -------------------------------
+WARNING  openjarvis.engine._discovery:_discovery.py:203 Requested engine 'ollama' is not registered
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/ender/OpenJarvis/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/cli/test_serve_single_build.py: 3 warnings
+tests/integration/test_integration.py: 2 warnings
+tests/security/test_network_defaults.py: 2 warnings
+tests/server/test_channel_routes.py: 9 warnings
+tests/server/test_cors_auth_interaction.py: 4 warnings
+tests/server/test_mcp_tools_cache.py: 5 warnings
+tests/server/test_model_management.py: 14 warnings
+tests/server/test_pwa_serving.py: 5 warnings
+tests/server/test_routes.py: 51 warnings
+tests/server/test_security_factory_wiring.py: 5 warnings
+  /home/ender/OpenJarvis/src/openjarvis/server/app.py:305: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/cli/test_serve_single_build.py: 6 warnings
+tests/integration/test_integration.py: 4 warnings
+tests/security/test_network_defaults.py: 4 warnings
+tests/server/test_channel_routes.py: 18 warnings
+tests/server/test_cors_auth_interaction.py: 4 warnings
+tests/server/test_mcp_tools_cache.py: 5 warnings
+tests/server/test_model_management.py: 28 warnings
+tests/server/test_pwa_serving.py: 10 warnings
+tests/server/test_routes.py: 58 warnings
+tests/server/test_security_factory_wiring.py: 5 warnings
+  /home/ender/OpenJarvis/.venv/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/cli/test_serve_single_build.py: 3 warnings
+tests/integration/test_integration.py: 2 warnings
+tests/security/test_network_defaults.py: 2 warnings
+tests/server/test_channel_routes.py: 9 warnings
+tests/server/test_model_management.py: 14 warnings
+tests/server/test_pwa_serving.py: 5 warnings
+  /home/ender/OpenJarvis/src/openjarvis/server/app.py:455: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/server/test_routes.py::TestMemoryServiceWiring::test_non_streaming_completion_feeds_memory
+tests/server/test_routes.py::TestMemoryServiceWiring::test_agent_completion_feeds_memory
+tests/server/test_routes.py::TestMemoryServiceWiring::test_streaming_completion_feeds_memory_without_bus
+tests/server/test_routes.py::TestIdentityPromptInjection::test_direct_merges_identity_and_auto_memory_into_one_system_message
+tests/server/test_routes.py::TestIdentityPromptInjection::test_direct_never_sends_quarantined_fact_to_engine
+tests/server/test_routes.py::TestIdentityPromptInjection::test_memory_context_preserves_assistant_tool_calls
+tests/server/test_routes.py::TestIdentityPromptInjection::test_agent_does_not_rebuild_identity_already_merged_with_memory
+  /home/ender/OpenJarvis/src/openjarvis/server/app.py:475: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/connectors/test_new_connectors_live.py::TestOuraLive::test_sync_returns_documents
+FAILED tests/connectors/test_new_connectors_live.py::TestStravaLive::test_sync_returns_documents
+FAILED tests/connectors/test_new_connectors_live.py::TestSpotifyLive::test_sync_returns_documents
+FAILED tests/connectors/test_new_connectors_live.py::TestGoogleTasksLive::test_sync_returns_documents
+FAILED tests/engine/test_gemma_cpp.py::TestGemmaCppLive::test_real_inference_produces_output
+FAILED tests/engine/test_gemma_cpp.py::TestGemmaCppLive::test_prepare_and_close_lifecycle
+FAILED tests/engine/test_gemma_cpp.py::TestGemmaCppLive::test_stream_yields_content
+FAILED tests/engine/test_gemma_cpp.py::TestGemmaCppLive::test_token_counts_are_positive
+FAILED tests/evals/comparison/test_subprocess_runner.py::TestRunOneShot::test_successful_run_returns_parsed_json
+FAILED tests/evals/comparison/test_subprocess_runner.py::TestRunOneShot::test_nonzero_exit_records_crash
+FAILED tests/evals/comparison/test_subprocess_runner.py::TestRunOneShot::test_timeout_kills_process
+FAILED tests/evals/comparison/test_subprocess_runner.py::TestRunOneShot::test_malformed_json_recorded
+FAILED tests/evals/comparison/test_subprocess_runner.py::TestRunOneShot::test_missing_output_json_recorded
+FAILED tests/skills/test_integration_live.py::TestSkillSystemIntegration::test_system_builder_discovers_skills
+FAILED tests/skills/test_integration_live.py::TestSkillSystemIntegration::test_skill_catalog_in_system_prompt
+FAILED tests/skills/test_integration_live.py::TestSkillSystemIntegration::test_skill_tool_invocation_returns_content
+FAILED tests/skills/test_integration_live.py::TestSkillSystemIntegration::test_agent_ask_with_skills_available
+17 failed, 8576 passed, 79 skipped, 285 warnings in 532.98s (0:08:52)

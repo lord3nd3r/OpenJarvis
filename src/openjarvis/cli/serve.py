@@ -211,6 +211,9 @@ def serve(
         or os.environ.get("GEMINI_API_KEY")
         or os.environ.get("GOOGLE_API_KEY")
         or os.environ.get("OPENROUTER_API_KEY")
+        or os.environ.get("XAI_API_KEY")
+        or os.environ.get("DEEPSEEK_API_KEY")
+        or os.environ.get("MINIMAX_API_KEY")
     )
     if _has_cloud and engine_name != "cloud":
         try:

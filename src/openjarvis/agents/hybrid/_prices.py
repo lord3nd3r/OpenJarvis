@@ -28,6 +28,13 @@ PRICES: dict[str, tuple[float, float]] = {
     "gemini-2.5-pro": (1.25, 10.0),
     "gemini-2.5-flash": (0.30, 2.50),
     "gemini-2.5-flash-lite": (0.10, 0.40),
+    # xAI (Grok) direct-API prices, USD per 1M tokens. Like the Gemini Pro
+    # models above, grok-4.x uses tiered pricing past 200K prompt tokens; the
+    # harness charges the low-context standard rate.
+    "grok-4.6": (2.00, 6.00),
+    "grok-4.5": (2.00, 6.00),
+    "grok-4.3": (1.25, 2.50),
+    "grok-build-0.1": (1.00, 2.00),
     # OpenRouter slugs (used by toolorchestra paper-match pool).
     # Prices are OpenRouter list (USD/1M tokens), 2026-05 snapshot.
     "qwen/qwen-2.5-coder-32b-instruct": (0.08, 0.18),

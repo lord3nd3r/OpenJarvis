@@ -323,7 +323,14 @@ def _default_pool(
 # dispatcher. OpenRouter is OpenAI-compatible; Gemini is text-only (no
 # tool-call parity with Anthropic — see `_base._call_gemini`). Both are
 # opt-in via cfg["worker_pool"] (not added to _default_pool).
-_CONDUCTOR_VALID_ENDPOINTS = ("vllm", "openai", "anthropic", "openrouter", "gemini")
+_CONDUCTOR_VALID_ENDPOINTS = (
+    "vllm",
+    "openai",
+    "anthropic",
+    "openrouter",
+    "gemini",
+    "xai",
+)
 
 
 def _resolve_worker_pool(

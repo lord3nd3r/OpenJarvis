@@ -180,7 +180,7 @@ max_tokens = 1024
 | `checkpoint_path` | string | `""` | Path to a fine-tuned checkpoint or LoRA adapter directory. |
 | `quantization` | string | `"none"` | Quantization format. Accepted values: `none`, `fp8`, `int8`, `int4`, `gguf_q4`, `gguf_q8`. |
 | `preferred_engine` | string | `""` | Override engine for this model (e.g., `"vllm"`). Takes priority over `engine.default`. |
-| `provider` | string | `""` | Model provider hint: `local`, `openai`, `anthropic`, `google`, `minimax`. Used by the Cloud engine to route API calls. |
+| `provider` | string | `""` | Model provider hint: `local`, `openai`, `anthropic`, `google`, `minimax`, `deepseek`, `xai`. Used by the Cloud engine to route API calls. |
 
 **Generation default fields** (overridable per-call):
 
@@ -1118,6 +1118,8 @@ OpenJarvis respects the following environment variables:
 | `ANTHROPIC_API_KEY` | API key for Anthropic cloud inference. Required for the `cloud` engine with Claude models. |
 | `GOOGLE_API_KEY` | API key for Google Gemini inference. Required for the `google` engine. |
 | `MINIMAX_API_KEY` | API key for MiniMax cloud inference. Required for the `cloud` engine with MiniMax models (MiniMax-M3, MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, MiniMax-M2.5-highspeed). |
+| `XAI_API_KEY` | API key for xAI (Grok) cloud inference. Required for the `cloud` engine with Grok models (grok-4.6, grok-4.5, grok-4.3, the grok-4.20 variants, grok-build-0.1). |
+| `DEEPSEEK_API_KEY` | API key for DeepSeek cloud inference. Required for the `cloud` engine with DeepSeek models (deepseek-v4-flash, deepseek-v4-pro). |
 | `TAVILY_API_KEY` | API key for the Tavily web search engine. Optional — when set, `auto` engine selection prefers Tavily. |
 | `YOUDOTCOM_API_KEY` | API key for the You.com web search engine. Optional — raises the keyless free-tier limits and enables You.com Contents extraction for URL queries. |
 | `OPENJARVIS_WEB_SEARCH_ENGINE` | Web search engine for the `web_search` tool: `auto` (default), `youcom`, `tavily`, or `duckduckgo`. |

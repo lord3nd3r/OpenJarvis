@@ -1,6 +1,6 @@
 """Cloud inference engine.
 
-OpenAI, Anthropic, Google, MiniMax, and DeepSeek API backends.
+OpenAI, Anthropic, Google, MiniMax, DeepSeek, and xAI (Grok) API backends.
 """
 
 from __future__ import annotations
@@ -55,10 +55,32 @@ PRICING: Dict[str, tuple[float, float]] = {
     "MiniMax-M2.5-highspeed": (0.60, 2.40),
     "deepseek-v4-flash": (0.27, 1.10),
     "deepseek-v4-pro": (0.55, 2.19),
+    # xAI (Grok) — short-context tier; see _GROK_LONG_CONTEXT_PRICING for
+    # the >200k-prompt tier, which xAI bills across the whole request.
+    "grok-4.6": (2.00, 6.00),
+    "grok-4.5": (2.00, 6.00),
+    "grok-4.3": (1.25, 2.50),
+    "grok-4.20-0309-reasoning": (1.25, 2.50),
+    "grok-4.20-0309-non-reasoning": (1.25, 2.50),
+    "grok-4.20-multi-agent-0309": (1.25, 2.50),
+    "grok-build-0.1": (1.00, 2.00),
 }
 
 _MINIMAX_M3_LONG_CONTEXT_THRESHOLD = 512_000
 _MINIMAX_M3_LONG_CONTEXT_PRICING = (0.60, 2.40)
+
+# xAI bills a request whose prompt crosses this threshold at the higher tier
+# in full (input *and* output), not just the overflow tokens.
+_GROK_LONG_CONTEXT_THRESHOLD = 200_000
+_GROK_LONG_CONTEXT_PRICING: Dict[str, tuple[float, float]] = {
+    "grok-4.6": (4.00, 12.00),
+    "grok-4.5": (4.00, 12.00),
+    "grok-4.3": (2.50, 5.00),
+    "grok-4.20-0309-reasoning": (2.50, 5.00),
+    "grok-4.20-0309-non-reasoning": (2.50, 5.00),
+    "grok-4.20-multi-agent-0309": (2.50, 5.00),
+    "grok-build-0.1": (2.00, 4.00),
+}
 
 # Well-known model IDs per provider
 _OPENAI_MODELS = [
@@ -98,6 +120,15 @@ _DEEPSEEK_MODELS = [
     "deepseek-v4-flash",
     "deepseek-v4-pro",
 ]
+_GROK_MODELS = [
+    "grok-4.6",
+    "grok-4.5",
+    "grok-4.3",
+    "grok-4.20-0309-reasoning",
+    "grok-4.20-0309-non-reasoning",
+    "grok-4.20-multi-agent-0309",
+    "grok-build-0.1",
+]
 
 # OpenRouter models — prefixed with "openrouter/" so they can be identified
 _OPENROUTER_POPULAR = [
@@ -126,8 +157,34 @@ def _is_minimax_model(model: str) -> bool:
     return model.lower().startswith("minimax")
 
 
+# Ollama tags a local model as ``<name>:<tag>`` (``deepseek-r1:7b``). No cloud
+# model ID from any provider contains a colon, so its presence is a reliable
+# "this is a local model" signal. Vendor-named local distills are exactly the
+# collision that #335 fixed for OpenAI, and both DeepSeek and xAI ship open
+# weights that Ollama serves under the vendor's own name.
+def _is_local_model_tag(model: str) -> bool:
+    return ":" in model
+
+
 def _is_deepseek_model(model: str) -> bool:
-    return model.lower().startswith("deepseek")
+    """True for DeepSeek's direct cloud API models.
+
+    Excludes Ollama-tagged names so a local distill (``deepseek-r1:7b``, which
+    ships in this repo's own model catalog) is never claimed by the cloud
+    engine just because a ``DEEPSEEK_API_KEY`` happens to be set.
+    """
+    return model.lower().startswith("deepseek") and not _is_local_model_tag(model)
+
+
+def _is_grok_model(model: str) -> bool:
+    """True for xAI's direct Grok API models (``grok-*``).
+
+    A leading ``grok`` cannot collide with ``openrouter/x-ai/grok-4``:
+    OpenRouter IDs start with their own routing prefix, so the same
+    startswith test that keeps DeepSeek and OpenRouter distinct applies here.
+    Ollama-tagged names are excluded for the same reason as DeepSeek.
+    """
+    return model.lower().startswith("grok") and not _is_local_model_tag(model)
 
 
 def _is_openrouter_model(model: str) -> bool:
@@ -219,6 +276,17 @@ def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> flo
         and prompt_tokens > _MINIMAX_M3_LONG_CONTEXT_THRESHOLD
     ):
         prices = _MINIMAX_M3_LONG_CONTEXT_PRICING
+    elif _is_grok_model(model) and prompt_tokens > _GROK_LONG_CONTEXT_THRESHOLD:
+        # Exact match first, then prefix — mirrors the base-tier lookup above so
+        # a dated variant (e.g. "grok-4.6-0812") still finds its family's rate.
+        long_prices = _GROK_LONG_CONTEXT_PRICING.get(model)
+        if long_prices is None:
+            for key, val in _GROK_LONG_CONTEXT_PRICING.items():
+                if model.startswith(key):
+                    long_prices = val
+                    break
+        if long_prices is not None:
+            prices = long_prices
     input_cost = (prompt_tokens / 1_000_000) * prices[0]
     output_cost = (completion_tokens / 1_000_000) * prices[1]
     return input_cost + output_cost
@@ -322,7 +390,7 @@ def _convert_tools_to_google(
 
 @EngineRegistry.register("cloud")
 class CloudEngine(InferenceEngine):
-    """Cloud inference via OpenAI, Anthropic, Google, MiniMax, and DeepSeek SDKs."""
+    """Cloud inference via OpenAI, Anthropic, Google, MiniMax, DeepSeek, and xAI."""
 
     engine_id = "cloud"
     is_cloud = True
@@ -334,6 +402,7 @@ class CloudEngine(InferenceEngine):
         self._openrouter_client: Any = None
         self._minimax_client: Any = None
         self._deepseek_client: Any = None
+        self._xai_client: Any = None
         self._codex_client: Any = None
         # Gemini thought_signatures: tool_call_id -> signature bytes
         self._thought_sigs: Dict[str, bytes] = {}
@@ -394,6 +463,17 @@ class CloudEngine(InferenceEngine):
                 self._deepseek_client = openai.OpenAI(
                     base_url="https://api.deepseek.com/v1",
                     api_key=deepseek_key,
+                )
+            except ImportError:
+                pass
+        xai_key = os.environ.get("XAI_API_KEY")
+        if xai_key:
+            try:
+                import openai
+
+                self._xai_client = openai.OpenAI(
+                    base_url="https://api.x.ai/v1",
+                    api_key=xai_key,
                 )
             except ImportError:
                 pass
@@ -1100,6 +1180,54 @@ class CloudEngine(InferenceEngine):
             ]
         return result
 
+    def _generate_grok(
+        self,
+        messages: Sequence[Message],
+        *,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        if self._xai_client is None:
+            raise EngineConnectionError("xAI client not available — set XAI_API_KEY")
+        create_kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": messages_to_dicts(messages),
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            **kwargs,
+        }
+        t0 = time.monotonic()
+        resp = self._xai_client.chat.completions.create(**create_kwargs)
+        elapsed = time.monotonic() - t0
+        choice = resp.choices[0]
+        usage = resp.usage
+        prompt_tokens = usage.prompt_tokens if usage else 0
+        completion_tokens = usage.completion_tokens if usage else 0
+        result: Dict[str, Any] = {
+            "content": choice.message.content or "",
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": (usage.total_tokens if usage else 0),
+            },
+            "model": resp.model,
+            "finish_reason": choice.finish_reason or "stop",
+            "cost_usd": estimate_cost(model, prompt_tokens, completion_tokens),
+            "ttft": elapsed,
+        }
+        if hasattr(choice.message, "tool_calls") and choice.message.tool_calls:
+            result["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                }
+                for tc in choice.message.tool_calls
+            ]
+        return result
+
     def generate(
         self,
         messages: Sequence[Message],
@@ -1123,6 +1251,8 @@ class CloudEngine(InferenceEngine):
             return self._generate_minimax(messages, **kw)
         if _is_deepseek_model(model):
             return self._generate_deepseek(messages, **kw)
+        if _is_grok_model(model):
+            return self._generate_grok(messages, **kw)
         if _is_anthropic_model(model):
             return self._generate_anthropic(messages, **kw)
         if _is_google_model(model):
@@ -1155,6 +1285,9 @@ class CloudEngine(InferenceEngine):
                 yield token
         elif _is_deepseek_model(model):
             async for token in self._stream_deepseek(messages, **kw):
+                yield token
+        elif _is_grok_model(model):
+            async for token in self._stream_grok(messages, **kw):
                 yield token
         elif _is_anthropic_model(model):
             async for token in self._stream_anthropic(messages, **kw):
@@ -1552,6 +1685,30 @@ class CloudEngine(InferenceEngine):
             if delta and delta.content:
                 yield delta.content
 
+    async def _stream_grok(
+        self,
+        messages: Sequence[Message],
+        *,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        if self._xai_client is None:
+            raise EngineConnectionError("xAI client not available")
+        create_kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": messages_to_dicts(messages),
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": True,
+        }
+        resp = self._xai_client.chat.completions.create(**create_kwargs)
+        for chunk in resp:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                yield delta.content
+
     # -- stream_full: rich streaming with tool_calls support ----------------
 
     async def _stream_full_openai(
@@ -1565,7 +1722,7 @@ class CloudEngine(InferenceEngine):
     ) -> AsyncIterator[StreamChunk]:
         """Yield StreamChunks from an OpenAI-compatible streaming response.
 
-        Works for OpenAI, OpenRouter, MiniMax, and Codex.
+        Works for OpenAI, OpenRouter, MiniMax, DeepSeek, xAI, and Codex.
         """
         if _is_codex_model(model):
             # Codex uses Responses API — fall back to base stream_full wrapper
@@ -1609,6 +1766,18 @@ class CloudEngine(InferenceEngine):
             client = self._deepseek_client
             if client is None:
                 raise EngineConnectionError("DeepSeek client not available")
+            create_kwargs = {
+                "model": model,
+                "messages": messages_to_dicts(messages),
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+                **kwargs,
+            }
+        elif _is_grok_model(model):
+            client = self._xai_client
+            if client is None:
+                raise EngineConnectionError("xAI client not available")
             create_kwargs = {
                 "model": model,
                 "messages": messages_to_dicts(messages),
@@ -1785,6 +1954,8 @@ class CloudEngine(InferenceEngine):
             models.extend(_MINIMAX_MODELS)
         if self._deepseek_client is not None:
             models.extend(_DEEPSEEK_MODELS)
+        if self._xai_client is not None:
+            models.extend(_GROK_MODELS)
         if self._codex_client is not None:
             models.extend(_CODEX_MODELS)
         return models
@@ -1810,6 +1981,8 @@ class CloudEngine(InferenceEngine):
             return self._minimax_client
         if _is_deepseek_model(model):
             return self._deepseek_client
+        if _is_grok_model(model):
+            return self._xai_client
         if _is_anthropic_model(model):
             return self._anthropic_client
         if _is_google_model(model):
@@ -1839,6 +2012,7 @@ class CloudEngine(InferenceEngine):
             or self._openrouter_client is not None
             or self._minimax_client is not None
             or self._deepseek_client is not None
+            or self._xai_client is not None
             or self._codex_client is not None
         )
 
@@ -1861,6 +2035,14 @@ class CloudEngine(InferenceEngine):
             if hasattr(self._minimax_client, "close"):
                 self._minimax_client.close()
             self._minimax_client = None
+        if self._deepseek_client is not None:
+            if hasattr(self._deepseek_client, "close"):
+                self._deepseek_client.close()
+            self._deepseek_client = None
+        if self._xai_client is not None:
+            if hasattr(self._xai_client, "close"):
+                self._xai_client.close()
+            self._xai_client = None
         if self._codex_client is not None:
             self._codex_client = None
 
