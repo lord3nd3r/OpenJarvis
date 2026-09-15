@@ -74,14 +74,16 @@ function ApiKeyInput({
   const [error, setError] = useState('');
   const desktopKeyStorage = isTauri();
   const serverToolStorage = !desktopKeyStorage && !!toolName;
-  const canManage = desktopKeyStorage || serverToolStorage;
+  const browserStorage = !desktopKeyStorage && !toolName;
+  const browserStorageKey = `cloud_key_${keyName}`;
+  const canManage = true;
 
   const refresh = useCallback(async () => {
-    if (!canManage) {
-      setHasKey(false);
-      return;
-    }
     try {
+      if (browserStorage) {
+        setHasKey(!!localStorage.getItem(browserStorageKey));
+        return;
+      }
       const status = desktopKeyStorage
         ? await getCloudKeyStatus()
         : await fetchToolCredentialStatus(toolName!);
@@ -89,7 +91,7 @@ function ApiKeyInput({
     } catch {
       setHasKey(false);
     }
-  }, [canManage, desktopKeyStorage, keyName, toolName]);
+  }, [browserStorage, browserStorageKey, desktopKeyStorage, keyName, toolName]);
 
   useEffect(() => {
     void refresh();
@@ -107,7 +109,7 @@ function ApiKeyInput({
       } else if (toolName) {
         await saveToolCredentials(toolName, { [keyName]: next });
       } else {
-        return;
+        localStorage.setItem(browserStorageKey, btoa(next));
       }
       setValue('');
       setHasKey(true);
@@ -127,7 +129,7 @@ function ApiKeyInput({
       } else if (toolName) {
         await deleteToolCredential(toolName, keyName);
       } else {
-        return;
+        localStorage.removeItem(browserStorageKey);
       }
       setValue('');
       setHasKey(false);
@@ -146,7 +148,7 @@ function ApiKeyInput({
         value={value}
         onChange={e => setValue(e.target.value)}
         onBlur={() => { if (value.trim()) void save(value); }}
-        placeholder={hasKey ? (desktopKeyStorage ? 'Saved in secure storage' : 'Saved by local server') : placeholder}
+        placeholder={hasKey ? (desktopKeyStorage ? 'Saved in secure storage' : browserStorage ? 'Saved in this browser' : 'Saved by local server') : placeholder}
         disabled={!canManage}
         className="w-48 px-2 py-1 rounded text-xs"
         style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
@@ -171,7 +173,11 @@ function CloudProviderStatus({ label, keyName }: { label: string; keyName: strin
 
   const refresh = useCallback(async () => {
     if (!desktopKeyStorage) {
-      setHasKey(false);
+      try {
+        setHasKey(!!localStorage.getItem(`cloud_key_${keyName}`));
+      } catch {
+        setHasKey(false);
+      }
       return;
     }
     try {

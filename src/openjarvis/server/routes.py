@@ -161,9 +161,15 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
     engine = request.app.state.engine
     agent = getattr(request.app.state, "agent", None)
     model = request_body.model
+    # Don't route cloud models through the agent in web mode — cloud models
+    # should use the cloud_router which supports header-based API keys.
+    from openjarvis.server.cloud_router import is_cloud_model
+
+    is_cloud = is_cloud_model(model)
     use_server_agent = (
         agent is not None
         and not request_body.tools
+        and not is_cloud  # Cloud models bypass agent to use cloud_router with headers
         and (not request_body.stream or bool(getattr(agent, "_tools", None)))
     )
 
@@ -351,6 +357,9 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
         )
     else:
         bus = getattr(request.app.state, "bus", None)
+        # Extract request headers for cloud router (for API keys via
+        # headers in web mode)
+        req_headers = dict(request.headers) if hasattr(request, "headers") else {}
         response = await asyncio.to_thread(
             _handle_direct,
             engine,
@@ -359,6 +368,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
             bus=bus,
             complexity_info=complexity_info,
             app_config=config,
+            request_headers=req_headers,
         )
 
     # Hand the completed exchange to the background memory service.
@@ -464,6 +474,7 @@ def _handle_direct(
     bus=None,
     complexity_info=None,
     app_config=None,
+    request_headers: dict[str, str] | None = None,
 ) -> ChatCompletionResponse:
     """Direct engine call without agent."""
     messages = _to_messages(req.messages)
@@ -471,7 +482,30 @@ def _handle_direct(
     kwargs: dict[str, Any] = {}
     if req.tools:
         kwargs["tools"] = req.tools
-    if bus:
+
+    # Route cloud models through cloud_router to support header-based API keys
+    use_cloud = _uses_direct_cloud_router(engine, model)
+    if use_cloud:
+        import httpx
+
+        from openjarvis.server.cloud_router import generate_cloud
+
+        try:
+            result = generate_cloud(
+                model, messages, req.temperature, req.max_tokens, request_headers or {}
+            )
+        except ValueError as exc:
+            # Missing/unknown provider key — surface as a clean 400 so the UI
+            # shows the message instead of an opaque 500 (which also lacks CORS
+            # headers and reads as "NetworkError" in the browser).
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except httpx.HTTPStatusError as exc:
+            # Streaming responses may be unread here, so don't touch .text.
+            raise HTTPException(
+                status_code=502,
+                detail=f"Cloud provider returned {exc.response.status_code}",
+            ) from exc
+    elif bus:
         from openjarvis.telemetry.instrumented_engine import InstrumentedEngine
         from openjarvis.telemetry.wrapper import instrumented_generate
 
@@ -978,7 +1012,11 @@ async def _handle_stream(
             # is_cloud attribute.
             if use_cloud:
                 token_iter = stream_cloud(
-                    model, messages, req.temperature, req.max_tokens, request_headers or {}
+                    model,
+                    messages,
+                    req.temperature,
+                    req.max_tokens,
+                    request_headers or {},
                 )
             else:
                 # Use engine.stream() by default (preserves mock-engine

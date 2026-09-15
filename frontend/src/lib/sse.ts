@@ -1,5 +1,5 @@
 import type { ResearchEvent, SSEEvent } from '../types';
-import { getBase, authHeaders } from './api';
+import { getBase, authHeaders, cloudKeyHeaders } from './api';
 
 export interface ChatRequest {
   model: string;
@@ -14,15 +14,35 @@ export async function* streamChat(
   signal?: AbortSignal,
 ): AsyncGenerator<SSEEvent> {
   const base = getBase();
-  const response = await fetch(`${base}/v1/chat/completions`, {
-    method: 'POST',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify(request),
-    signal,
-  });
+  const url = `${base}/v1/chat/completions`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...authHeaders({ 'Content-Type': 'application/json' }),
+        ...cloudKeyHeaders(),
+      },
+      body: JSON.stringify(request),
+      signal,
+    });
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw e;
+    // A network-level failure names the URL so a wrong "API URL" setting is
+    // obvious instead of an opaque browser NetworkError.
+    throw new Error(
+      `Could not reach the backend at ${url} (${e?.message || e}). ` +
+      'Check Settings → Connection → API URL (leave it blank for the default).',
+    );
+  }
 
   if (!response.ok) {
-    throw new Error(`Chat request failed: ${response.status}`);
+    let detail = '';
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {}
+    throw new Error(detail || `Chat request failed: ${response.status}`);
   }
 
   const reader = response.body!.getReader();
@@ -68,7 +88,10 @@ export async function* streamResearch(
   const base = getBase().replace(/\/v1\/?$/, '');
   const response = await fetch(`${base}/api/research`, {
     method: 'POST',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    headers: {
+      ...authHeaders({ 'Content-Type': 'application/json' }),
+      ...cloudKeyHeaders(),
+    },
     body: JSON.stringify({ query, ...(model ? { model } : {}) }),
     signal,
   });

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 
 import click
@@ -26,6 +27,20 @@ from openjarvis.intelligence import (
 logger = logging.getLogger(__name__)
 
 _DEFAULT_TOOLS = frozenset({"think", "calculator", "web_search"})
+
+# Provider keys `jarvis serve` recognises in the environment. Only used for the
+# startup status line — the cloud engine is built regardless, because the web
+# UI supplies keys per request as X-Cloud-API-* headers.
+_CLOUD_KEY_ENV_VARS = (
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "OPENROUTER_API_KEY",
+    "XAI_API_KEY",
+    "DEEPSEEK_API_KEY",
+    "MINIMAX_API_KEY",
+)
 
 
 def _resolve_allowed_tools(config: object) -> tuple[set[str], bool]:
@@ -199,33 +214,29 @@ def serve(
     sec = setup_security(config, engine, bus)
     engine = sec.engine
 
-    # If cloud API keys are set, prepare a cloud engine. We build the
-    # MultiEngine after local discovery so healthy local fallbacks such as
-    # Ollama stay visible even when the configured preferred engine is MLX.
-    import os
-
+    # Always prepare a cloud engine. We build the MultiEngine after local
+    # discovery so healthy local fallbacks such as Ollama stay visible even
+    # when the configured preferred engine is MLX. Keys are not required at
+    # startup: the web UI sends them per request as X-Cloud-API-* headers,
+    # so gating this on env vars would leave cloud models unroutable.
     cloud_engine = None
-    _has_cloud = (
-        os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("ANTHROPIC_API_KEY")
-        or os.environ.get("GEMINI_API_KEY")
-        or os.environ.get("GOOGLE_API_KEY")
-        or os.environ.get("OPENROUTER_API_KEY")
-        or os.environ.get("XAI_API_KEY")
-        or os.environ.get("DEEPSEEK_API_KEY")
-        or os.environ.get("MINIMAX_API_KEY")
-    )
-    if _has_cloud and engine_name != "cloud":
+    if engine_name != "cloud":
         try:
             from openjarvis.engine.cloud import CloudEngine
 
             cloud_engine = CloudEngine()
+            keys_in_env = any(os.environ.get(name) for name in _CLOUD_KEY_ENV_VARS)
             if cloud_engine.health():
                 console.print("  Cloud:  [cyan]enabled[/cyan] (API keys detected)")
-            else:
+            elif keys_in_env:
                 console.print(
                     "  Cloud:  [yellow]keys set but packages missing[/yellow] "
                     "(run: uv sync --extra inference-cloud --extra inference-google)"
+                )
+            else:
+                console.print(
+                    "  Cloud:  [cyan]available[/cyan] "
+                    "(add provider API keys in the app or the environment)"
                 )
         except Exception as exc:
             logger.debug("Cloud engine init failed: %s", exc)

@@ -70,7 +70,13 @@ async def test_stream_cloud_routes_grok_to_xai_base_url(monkeypatch):
     captured: dict[str, str] = {}
 
     async def fake_stream_openai(
-        model, messages, temperature, max_tokens, base_url=None, api_key_name=None
+        model,
+        messages,
+        temperature,
+        max_tokens,
+        base_url=None,
+        api_key_name=None,
+        request_headers=None,
     ):
         captured["model"] = model
         captured["base_url"] = base_url
@@ -131,7 +137,13 @@ async def test_stream_cloud_routes_deepseek_to_its_base_url(monkeypatch):
     captured: dict[str, str] = {}
 
     async def fake_stream_openai(
-        model, messages, temperature, max_tokens, base_url=None, api_key_name=None
+        model,
+        messages,
+        temperature,
+        max_tokens,
+        base_url=None,
+        api_key_name=None,
+        request_headers=None,
     ):
         captured["model"] = model
         captured["base_url"] = base_url

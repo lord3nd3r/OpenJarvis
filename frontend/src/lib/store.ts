@@ -278,7 +278,13 @@ export const useAppStore = create<AppState>((set, get) => {
 
     models: [],
     modelsLoading: true,
-    selectedModel: '',
+    selectedModel: (() => {
+      try {
+        return localStorage.getItem('openjarvis-selected-model') || '';
+      } catch {
+        return '';
+      }
+    })(),
     serverInfo: null,
     savings: null,
 
@@ -509,7 +515,14 @@ export const useAppStore = create<AppState>((set, get) => {
         return { models };
       }),
     setModelsLoading: (loading: boolean) => set({ modelsLoading: loading }),
-    setSelectedModel: (model: string) => set({ selectedModel: model }),
+    setSelectedModel: (model: string) => {
+      try {
+        localStorage.setItem('openjarvis-selected-model', model);
+      } catch {
+        // localStorage not available, continue anyway
+      }
+      set({ selectedModel: model });
+    },
     setServerInfo: (info: ServerInfo | null) => set({ serverInfo: info }),
     setSavings: (data: SavingsData | null) => set({ savings: data }),
     incrementSavings: (usage: TokenUsage) => {

@@ -10,12 +10,21 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import AsyncIterator
-from typing import Any, Sequence
+from typing import Any, Dict, Sequence
 
 import httpx
 
 from openjarvis.core.paths import get_config_dir
 from openjarvis.core.types import Message
+
+
+class CloudProviderError(ValueError):
+    """Upstream provider rejected the request; message carries its reply."""
+
+    def __init__(self, provider_url: str, status_code: int, body: str) -> None:
+        self.status_code = status_code
+        super().__init__(f"{provider_url} returned {status_code}: {body}")
+
 
 # ---------------------------------------------------------------------------
 # Key / provider detection
@@ -55,6 +64,8 @@ def _load_keys(headers: dict[str, str] | None = None) -> dict[str, str]:
 
     # Check headers first (for web mode) — frontend passes keys as X-Cloud-API-* headers
     if headers:
+        # Make a lowercase version of headers for case-insensitive lookup
+        headers_lower = {k.lower(): v for k, v in headers.items()}
         for key_name in (
             "OPENAI_API_KEY",
             "ANTHROPIC_API_KEY",
@@ -65,9 +76,9 @@ def _load_keys(headers: dict[str, str] | None = None) -> dict[str, str]:
             "XAI_API_KEY",
             "DEEPSEEK_API_KEY",
         ):
-            header_key = f"X-Cloud-API-{key_name}"
-            if header_key in headers:
-                keys[key_name] = headers[header_key]
+            header_key_lower = f"x-cloud-api-{key_name}".lower()
+            if header_key_lower in headers_lower:
+                keys[key_name] = headers_lower[header_key_lower]
 
     # File next (cloud-keys.env)
     if _CLOUD_ENV_FILE.exists():
@@ -224,7 +235,9 @@ async def _stream_openai(
                 "Content-Type": "application/json",
             },
         ) as resp:
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                body = (await resp.aread()).decode("utf-8", errors="replace")
+                raise CloudProviderError(base_url, resp.status_code, body[:300])
             async for line in resp.aiter_lines():
                 if not line.startswith("data: "):
                     continue
@@ -415,15 +428,21 @@ async def stream_cloud(
     provider = get_provider(model)
 
     if provider == "openai":
-        async for token in _stream_openai(model, messages, temperature, max_tokens, request_headers=request_headers):
+        async for token in _stream_openai(
+            model, messages, temperature, max_tokens, request_headers=request_headers
+        ):
             yield token
 
     elif provider == "anthropic":
-        async for token in _stream_anthropic(model, messages, temperature, max_tokens, request_headers=request_headers):
+        async for token in _stream_anthropic(
+            model, messages, temperature, max_tokens, request_headers=request_headers
+        ):
             yield token
 
     elif provider == "google":
-        async for token in _stream_google(model, messages, temperature, max_tokens, request_headers=request_headers):
+        async for token in _stream_google(
+            model, messages, temperature, max_tokens, request_headers=request_headers
+        ):
             yield token
 
     elif provider == "openrouter":
@@ -496,3 +515,42 @@ async def stream_cloud(
 
     else:
         raise ValueError(f"Unknown cloud provider for model: {model!r}")
+
+
+def generate_cloud(
+    model: str,
+    messages: Sequence[Message],
+    temperature: float = 0.7,
+    max_tokens: int = 1024,
+    request_headers: dict[str, str] | None = None,
+) -> Dict[str, Any]:
+    """Generate a non-streaming response from a cloud provider.
+
+    Returns a dictionary compatible with InferenceEngine.generate() format.
+    """
+    import asyncio
+
+    # Collect all streamed tokens into a single response
+    async def collect_stream():
+        content = ""
+        async for token in stream_cloud(
+            model, messages, temperature, max_tokens, request_headers
+        ):
+            content += token
+        return content
+
+    # Run the async generator in a new event loop (we're in a thread pool
+    # from asyncio.to_thread)
+    content = asyncio.run(collect_stream())
+
+    # Return in the format expected by InferenceEngine
+    return {
+        "content": content,
+        "usage": {
+            "prompt_tokens": 0,  # Not available from streaming API
+            "completion_tokens": 0,  # Not available from streaming API
+            "total_tokens": 0,
+        },
+        "model": model,
+        "finish_reason": "stop",
+    }

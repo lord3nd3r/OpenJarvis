@@ -138,22 +138,25 @@ export const authHeaders = (
 // guarantees no /v1 or /api request is sent without auth — the bug in #266 was
 // that direct fetch() calls omitted the header and 401'd. `path` is the
 // server-relative path (e.g. "/v1/savings").
+// In web mode (non-Tauri), cloud API keys live in localStorage and are passed
+// to the backend as X-Cloud-API-* headers. Desktop stores them server-side.
+export const cloudKeyHeaders = (): Record<string, string> => {
+  if (isTauri()) return {};
+  const headers: Record<string, string> = {};
+  Object.entries(getCloudKeysFromStorage()).forEach(([key, value]) => {
+    headers[`X-Cloud-API-${key}`] = value;
+  });
+  return headers;
+};
+
 export const apiFetch = (
   path: string,
   init: RequestInit = {},
 ): Promise<Response> => {
-  const headers = authHeaders(
-    (init.headers as Record<string, string> | undefined) ?? {},
-  );
-
-  // In web mode (non-Tauri), pass cloud API keys as headers for the backend to use
-  if (!isTauri()) {
-    const cloudKeys = getCloudKeysFromStorage();
-    Object.entries(cloudKeys).forEach(([key, value]) => {
-      headers[`X-Cloud-API-${key}`] = value;
-    });
-  }
-
+  const headers = {
+    ...authHeaders((init.headers as Record<string, string> | undefined) ?? {}),
+    ...cloudKeyHeaders(),
+  };
   return fetch(`${getBase()}${path}`, { ...init, headers });
 };
 
@@ -277,7 +280,7 @@ export async function deleteModel(modelName: string): Promise<void> {
   }
 }
 
-const _CLOUD_PREFIXES = ['gpt-', 'o1-', 'o3-', 'o4-', 'claude-', 'gemini-', 'openrouter/'];
+const _CLOUD_PREFIXES = ['gpt-', 'o1-', 'o3-', 'o4-', 'claude-', 'gemini-', 'grok-', 'deepseek-', 'MiniMax-', 'openrouter/'];
 
 export async function preloadModel(modelName: string, owner?: string): Promise<void> {
   // Cloud models don't need Ollama preloading
