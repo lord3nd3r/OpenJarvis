@@ -2,7 +2,7 @@
 # install.sh — OpenJarvis curl-pipe-bash installer.
 #
 # Usage:
-#   curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh | bash
+#   curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh | bash
 #
 # Flags (only used in tests / power users):
 #   --no-bg-orchestrator   Skip the detached background orchestrator
@@ -11,7 +11,7 @@
 #
 # Environment overrides:
 #   OPENJARVIS_HOME        Install dir (default: $HOME/.openjarvis)
-#   OPENJARVIS_REPO_URL    git repo URL (default: https://github.com/open-jarvis/OpenJarvis.git)
+#   OPENJARVIS_REPO_URL    git repo URL (default: https://github.com/lord3nd3r/OpenJarvis.git)
 #   OPENJARVIS_FORCE_WSL   Set 1 to force WSL detection (testing)
 
 set -euo pipefail
@@ -49,13 +49,13 @@ OpenJarvis runs on Windows via WSL2. Two paths:
 
      Open the Ubuntu shell that gets installed, then re-run:
 
-       curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh | bash
+       curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh | bash
 
   2. Desktop app — download the .exe from the Releases page:
-     https://github.com/open-jarvis/OpenJarvis/releases
+     https://github.com/lord3nd3r/OpenJarvis/releases
 
 See the WSL2 install guide for the full walkthrough:
-  https://open-jarvis.github.io/OpenJarvis/getting-started/wsl2/
+  https://lord3nd3r.github.io/OpenJarvis/getting-started/wsl2/
 EOF
         exit 1
         ;;
@@ -148,7 +148,7 @@ Two ways forward:
        Arch:          sudo pacman -S $tool
 
   2. Pre-authenticate sudo before piping (caches credentials for 5 min):
-       sudo -v && curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh | bash
+       sudo -v && curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh | bash
 EOF
         exit 1
     fi
@@ -219,7 +219,7 @@ fi
 # unset, $XDG_DATA_HOME/openjarvis if XDG_DATA_HOME is set). With nothing set
 # the root is ~/.openjarvis, so existing installs are untouched.
 OPENJARVIS_HOME="${OPENJARVIS_HOME:-$HOME/.openjarvis}"
-OPENJARVIS_REPO_URL="${OPENJARVIS_REPO_URL:-https://github.com/open-jarvis/OpenJarvis.git}"
+OPENJARVIS_REPO_URL="${OPENJARVIS_REPO_URL:-https://github.com/lord3nd3r/OpenJarvis.git}"
 SRC_DIR="$OPENJARVIS_HOME/src"
 VENV_DIR="$OPENJARVIS_HOME/.venv"
 STATE_DIR="$OPENJARVIS_HOME/.state"

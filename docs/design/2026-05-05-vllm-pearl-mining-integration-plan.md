@@ -2740,7 +2740,7 @@ def _detect_hardware() -> HardwareInfo:
 def mine() -> None:
     """Pearl PoUW mining commands.
 
-    See https://open-jarvis.github.io/OpenJarvis/user-guide/mining/ for the
+    See https://lord3nd3r.github.io/OpenJarvis/user-guide/mining/ for the
     full guide.
     """
 

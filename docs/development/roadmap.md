@@ -16,9 +16,9 @@ These are the areas where active development is happening and contributions are 
 ## How to Get Involved
 
 1. Browse the workstreams below for an item that interests you
-2. Check if a [GitHub issue](https://github.com/open-jarvis/OpenJarvis/issues) already exists for it — if not, [open one](https://github.com/open-jarvis/OpenJarvis/issues/new/choose)
+2. Check if a [GitHub issue](https://github.com/lord3nd3r/OpenJarvis/issues) already exists for it — if not, [open one](https://github.com/lord3nd3r/OpenJarvis/issues/new/choose)
 3. Comment **"take"** on the issue to get auto-assigned
-4. Read the [Contributing Guide](https://github.com/open-jarvis/OpenJarvis/blob/main/CONTRIBUTING.md) for development setup and PR process
+4. Read the [Contributing Guide](https://github.com/lord3nd3r/OpenJarvis/blob/main/CONTRIBUTING.md) for development setup and PR process
 
 ---
 
@@ -30,8 +30,8 @@ Every item carries a maturity tag:
 
 | Tag | Meaning | Contributor guidance |
 |-----|---------|---------------------|
-| **Ready** | Well-scoped, implementation path is clear | Pick it up — check [issues](https://github.com/open-jarvis/OpenJarvis/issues) for a spec or write one |
-| **Design Needed** | Concept is clear but needs a spec before code | Start a [design discussion](https://github.com/open-jarvis/OpenJarvis/discussions) or draft an RFC |
+| **Ready** | Well-scoped, implementation path is clear | Pick it up — check [issues](https://github.com/lord3nd3r/OpenJarvis/issues) for a spec or write one |
+| **Design Needed** | Concept is clear but needs a spec before code | Start a [design discussion](https://github.com/lord3nd3r/OpenJarvis/discussions) or draft an RFC |
 | **Research-Stage** | Exploratory, needs investigation before designing | Read the relevant papers, prototype, share findings |
 
 ---

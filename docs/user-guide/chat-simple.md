@@ -14,7 +14,7 @@ ollama pull qwen3.5:4b
 ### 2. Install and initialize OpenJarvis
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
+git clone https://github.com/lord3nd3r/OpenJarvis.git
 cd OpenJarvis
 uv sync
 jarvis init --preset chat-simple --force
@@ -113,7 +113,7 @@ The server is OpenAI-compatible, so any client that works with the OpenAI API ca
 ## Using the Desktop App
 
 1. Start the backend: `jarvis serve` (or `./scripts/quickstart.sh`)
-2. Download and open the desktop app from the [releases page](https://github.com/open-jarvis/OpenJarvis/releases)
+2. Download and open the desktop app from the [releases page](https://github.com/lord3nd3r/OpenJarvis/releases)
 3. The app connects to `http://localhost:8000` automatically
 
 ## Switching Models

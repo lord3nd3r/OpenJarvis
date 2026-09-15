@@ -298,7 +298,7 @@ We recommend creating **one Slack app** that handles both. The App Manifest belo
 
 8. **(Optional) Set the app icon:**
    - Go to Basic Information → Display Information
-   - Upload the [OpenJarvis icon](https://github.com/open-jarvis/OpenJarvis/blob/main/assets/openjarvis-slack-icon.jpg)
+   - Upload the [OpenJarvis icon](https://github.com/lord3nd3r/OpenJarvis/blob/main/assets/openjarvis-slack-icon.jpg)
 
 ### Required Bot Token Scopes (reference)
 

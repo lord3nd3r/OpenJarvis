@@ -22,10 +22,10 @@
          deploy/windows/jarvis-service.ps1).
 
     Usage (one-liner):
-      irm https://open-jarvis.github.io/OpenJarvis/install.ps1 | iex
+      irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 | iex
 
     Usage (file invocation, supports flags):
-      irm https://open-jarvis.github.io/OpenJarvis/install.ps1 -OutFile install.ps1
+      irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 -OutFile install.ps1
       .\install.ps1 -SkipService
 
     Flags (when running the file directly):
@@ -263,7 +263,7 @@ if (-not (Test-Path $installRoot)) {
 $repoUrl = if ($env:OPENJARVIS_REPO_URL) {
     $env:OPENJARVIS_REPO_URL
 } else {
-    'https://github.com/open-jarvis/OpenJarvis.git'
+    'https://github.com/lord3nd3r/OpenJarvis.git'
 }
 
 if (Test-Path (Join-Path $srcDir '.git')) {
@@ -534,5 +534,5 @@ if ($shouldInstallService) {
     Write-Host "           powershell -File `"$serviceScript`" uninstall    (remove)"
 }
 Write-Host ""
-Write-Host "  Docs:    https://open-jarvis.github.io/OpenJarvis/"
+Write-Host "  Docs:    https://lord3nd3r.github.io/OpenJarvis/"
 Write-Host ""

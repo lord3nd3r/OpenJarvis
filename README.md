@@ -6,7 +6,7 @@
   <p>
     <a href="https://arxiv.org/abs/2605.17172"><img src="https://img.shields.io/badge/arXiv-2605.17172-b31b1b.svg" alt="arXiv"></a>
     <a href="https://openjarvis.stanford.edu/"><img src="https://img.shields.io/badge/project-OpenJarvis-blue" alt="Project"></a>
-    <a href="https://open-jarvis.github.io/OpenJarvis/"><img src="https://img.shields.io/badge/docs-mkdocs-blue" alt="Docs"></a>
+    <a href="https://lord3nd3r.github.io/OpenJarvis/"><img src="https://img.shields.io/badge/docs-mkdocs-blue" alt="Docs"></a>
     <img src="https://img.shields.io/badge/python-%3E%3D3.10-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
     <a href="https://discord.gg/CMVBmDQ5Fj"><img src="https://img.shields.io/badge/discord-join-7289da?logo=discord&logoColor=white" alt="Discord"></a>
@@ -22,15 +22,15 @@
 
 ---
 
-> **[Documentation](https://open-jarvis.github.io/OpenJarvis/)**
+> **[Documentation](https://lord3nd3r.github.io/OpenJarvis/)**
 >
 > **[Project Site](https://openjarvis.stanford.edu/)**
 >
 > **[Paper](https://arxiv.org/abs/2605.17172)**
 >
-> **[Leaderboard](https://open-jarvis.github.io/OpenJarvis/leaderboard/)**
+> **[Leaderboard](https://lord3nd3r.github.io/OpenJarvis/leaderboard/)**
 >
-> **[Roadmap](https://open-jarvis.github.io/OpenJarvis/development/roadmap/)**
+> **[Roadmap](https://lord3nd3r.github.io/OpenJarvis/development/roadmap/)**
 
 ## Why OpenJarvis?
 
@@ -44,13 +44,13 @@ Pick your platform and run one command. Each installer handles [uv](https://docs
 
 | Platform | One-liner |
 |---|---|
-| **macOS · Linux · WSL2** | `curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh \| bash` |
-| **Native Windows** | `irm https://open-jarvis.github.io/OpenJarvis/install.ps1 \| iex` |
-| **Desktop GUI** | Download `.exe` / `.dmg` / `.deb` / `.rpm` / `.AppImage` from the [latest release](https://github.com/open-jarvis/OpenJarvis/releases) |
+| **macOS · Linux · WSL2** | `curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh \| bash` |
+| **Native Windows** | `irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 \| iex` |
+| **Desktop GUI** | Download `.exe` / `.dmg` / `.deb` / `.rpm` / `.AppImage` from the [latest release](https://github.com/lord3nd3r/OpenJarvis/releases) |
 
 Then `jarvis` to start. The Rust extension and larger models continue downloading in the background; `jarvis doctor` shows status.
 
-Platform-specific notes (WSL2 setup, native-Windows scheduled-task service, desktop prerequisites, manual / contributor install): see the [installation docs](https://open-jarvis.github.io/OpenJarvis/getting-started/install/).
+Platform-specific notes (WSL2 setup, native-Windows scheduled-task service, desktop prerequisites, manual / contributor install): see the [installation docs](https://lord3nd3r.github.io/OpenJarvis/getting-started/install/).
 
 ## Quick Start
 
@@ -77,9 +77,9 @@ jarvis connect gdrive          # one OAuth covers Gmail / Calendar / Tasks
 jarvis digest --fresh          # generate and play your first briefing
 ```
 
-Prefer a chat window? `./scripts/quickstart.sh` runs the browser app at `localhost:5173` — local models by default, cloud models (OpenAI, Anthropic, Gemini, xAI/Grok with web search, DeepSeek, MiniMax, OpenRouter) once you paste a key in Settings, and hands-free [voice mode](https://open-jarvis.github.io/OpenJarvis/user-guide/voice/) ("yo jarvis, …") with spoken replies.
+Prefer a chat window? `./scripts/quickstart.sh` runs the browser app at `localhost:5173` — local models by default, cloud models (OpenAI, Anthropic, Gemini, xAI/Grok with web search, DeepSeek, MiniMax, OpenRouter) once you paste a key in Settings, and hands-free [voice mode](https://lord3nd3r.github.io/OpenJarvis/user-guide/voice/) ("yo jarvis, …") with spoken replies.
 
-Per-preset deep dives: [morning digest](https://open-jarvis.github.io/OpenJarvis/user-guide/morning-digest/) · [deep research](https://open-jarvis.github.io/OpenJarvis/user-guide/deep-research/) · [code assistant](https://open-jarvis.github.io/OpenJarvis/user-guide/code-assistant/) · [scheduled monitor](https://open-jarvis.github.io/OpenJarvis/user-guide/scheduled-monitor/) · [chat simple](https://open-jarvis.github.io/OpenJarvis/user-guide/chat-simple/) · or the full [quickstart guide](https://open-jarvis.github.io/OpenJarvis/getting-started/quickstart/).
+Per-preset deep dives: [morning digest](https://lord3nd3r.github.io/OpenJarvis/user-guide/morning-digest/) · [deep research](https://lord3nd3r.github.io/OpenJarvis/user-guide/deep-research/) · [code assistant](https://lord3nd3r.github.io/OpenJarvis/user-guide/code-assistant/) · [scheduled monitor](https://lord3nd3r.github.io/OpenJarvis/user-guide/scheduled-monitor/) · [chat simple](https://lord3nd3r.github.io/OpenJarvis/user-guide/chat-simple/) · or the full [quickstart guide](https://lord3nd3r.github.io/OpenJarvis/getting-started/quickstart/).
 
 ### Skills
 
@@ -102,7 +102,7 @@ jarvis bench skills --max-samples 5 --seeds 42
 
 Import from [Hermes Agent](https://github.com/NousResearch/hermes-agent) (~150 skills), [OpenClaw](https://github.com/openclaw/skills) (~13,700 community skills), or any GitHub repo. Skills follow the [agentskills.io](https://agentskills.io/specification) open standard.
 
-See the [Skills User Guide](https://open-jarvis.github.io/OpenJarvis/user-guide/skills/) and [Skills Tutorial](https://open-jarvis.github.io/OpenJarvis/tutorials/skills-workflow/) for details.
+See the [Skills User Guide](https://lord3nd3r.github.io/OpenJarvis/user-guide/skills/) and [Skills Tutorial](https://lord3nd3r.github.io/OpenJarvis/tutorials/skills-workflow/) for details.
 
 ### Built-in Agents
 
@@ -119,16 +119,16 @@ OpenJarvis ships with eight built-in agents across three execution modes (on-dem
 | `native_openhands` | On-demand | CodeAct — generates and executes Python code |
 | `simple` | On-demand | Single-turn chat, no tools |
 
-See the [User Guide](https://open-jarvis.github.io/OpenJarvis/user-guide/morning-digest/) and [Tutorials](https://open-jarvis.github.io/OpenJarvis/tutorials/) for detailed setup instructions.
+See the [User Guide](https://lord3nd3r.github.io/OpenJarvis/user-guide/morning-digest/) and [Tutorials](https://lord3nd3r.github.io/OpenJarvis/tutorials/) for detailed setup instructions.
 
-Full documentation — including Docker deployment, cloud engines, development setup, and tutorials — at **[open-jarvis.github.io/OpenJarvis](https://open-jarvis.github.io/OpenJarvis/)**.
+Full documentation — including Docker deployment, cloud engines, development setup, and tutorials — at **[lord3nd3r.github.io/OpenJarvis](https://lord3nd3r.github.io/OpenJarvis/)**.
 
 ## Community
 
-- **GitHub:** [github.com/open-jarvis/OpenJarvis](https://github.com/open-jarvis/OpenJarvis)
+- **GitHub:** [github.com/lord3nd3r/OpenJarvis](https://github.com/lord3nd3r/OpenJarvis)
 - **Discord:** [discord.gg/CMVBmDQ5Fj](https://discord.gg/CMVBmDQ5Fj)
 - **X / Twitter:** [@OpenJarvisAI](https://x.com/OpenJarvisAI)
-- **Docs:** [open-jarvis.github.io/OpenJarvis](https://open-jarvis.github.io/OpenJarvis/)
+- **Docs:** [lord3nd3r.github.io/OpenJarvis](https://lord3nd3r.github.io/OpenJarvis/)
 
 ## Contributing
 
@@ -137,14 +137,14 @@ We welcome contributions! See the [Contributing Guide](CONTRIBUTING.md) for ince
 Quick start for contributors:
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
+git clone https://github.com/lord3nd3r/OpenJarvis.git
 cd OpenJarvis
 uv sync --extra dev
 uv run pre-commit install
 uv run pytest tests/ -v
 ```
 
-Browse the [Roadmap](https://open-jarvis.github.io/OpenJarvis/development/roadmap/) for areas where help is needed. Comment **"take"** on any issue to get auto-assigned.
+Browse the [Roadmap](https://lord3nd3r.github.io/OpenJarvis/development/roadmap/) for areas where help is needed. Comment **"take"** on any issue to get auto-assigned.
 
 ## About
 

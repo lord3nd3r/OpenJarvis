@@ -1599,7 +1599,7 @@ Session
 | `maturin build` complains about `tikv-jemallocator` | macOS SDK too old | Update macOS / Xcode |
 
 For anything not on this list, capture `~/.openjarvis/logs/mining/` and open
-an issue at https://github.com/open-jarvis/OpenJarvis/issues.
+an issue at https://github.com/lord3nd3r/OpenJarvis/issues.
 
 ## What changes in v2 / v3
 

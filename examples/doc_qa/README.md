@@ -5,7 +5,7 @@ with context-augmented retrieval and citations.
 
 ## Requirements
 
-- OpenJarvis installed (`git clone https://github.com/open-jarvis/OpenJarvis.git && cd OpenJarvis && uv sync` or `uv sync --extra dev`)
+- OpenJarvis installed (`git clone https://github.com/lord3nd3r/OpenJarvis.git && cd OpenJarvis && uv sync` or `uv sync --extra dev`)
 - An inference engine running (Ollama, cloud API, vLLM, etc.)
 - A memory backend available (SQLite is the built-in default)
 

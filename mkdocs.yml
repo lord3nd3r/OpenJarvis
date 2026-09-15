@@ -1,9 +1,9 @@
 site_name: OpenJarvis
-site_url: https://open-jarvis.github.io/OpenJarvis/
+site_url: https://lord3nd3r.github.io/OpenJarvis/
 site_description: Personal AI, On Personal Devices
 site_author: OpenJarvis Contributors
-repo_url: https://github.com/open-jarvis/OpenJarvis
-repo_name: open-jarvis/OpenJarvis
+repo_url: https://github.com/lord3nd3r/OpenJarvis
+repo_name: lord3nd3r/OpenJarvis
 edit_uri: edit/main/docs/
 
 copyright: Copyright &copy; 2026 OpenJarvis Contributors
@@ -141,7 +141,7 @@ extra:
     index_name: ""   # e.g. "openjarvis"
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/open-jarvis/OpenJarvis
+      link: https://github.com/lord3nd3r/OpenJarvis
 
 nav:
   - Home: index.md

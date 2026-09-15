@@ -18,7 +18,7 @@ Then open the Ubuntu (or Debian) shell that gets installed.
 ## Install OpenJarvis
 
 ```bash
-curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh | bash
+curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh | bash
 ```
 
 About 3 minutes. Type `jarvis` to start.

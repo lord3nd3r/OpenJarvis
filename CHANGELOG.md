@@ -170,7 +170,7 @@ logic is covered by unit tests.
 handshake failure` (the domain is community-operated and had a broken
 TLS config). The canonical installer is now served from the
 project-controlled GitHub Pages site at
-`https://open-jarvis.github.io/OpenJarvis/install.sh`, generated from
+`https://lord3nd3r.github.io/OpenJarvis/install.sh`, generated from
 the same `scripts/install/install.sh` at docs-build time. The README
 also documents the WSL2 path for Windows and the `uv` prerequisite
 for the desktop binary, and the installer bails early with a clear

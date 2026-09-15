@@ -63,7 +63,7 @@ The Showcase grows from real users. If you've built something interesting on top
 1. **One-sentence hook**: what does this *do for you*?
 2. **A screenshot or 15-second screen recording**: the visible result.
 3. **2–3 short paragraphs**: when you use it, why it's nice (cost, privacy, speed, calm).
-4. **"How I set this up →"**: a link to the relevant [Tutorial](../tutorials/index.md), [User Guide](../user-guide/cli.md), or [Recipe](https://github.com/open-jarvis/OpenJarvis/tree/main/src/openjarvis/recipes/data).
+4. **"How I set this up →"**: a link to the relevant [Tutorial](../tutorials/index.md), [User Guide](../user-guide/cli.md), or [Recipe](https://github.com/lord3nd3r/OpenJarvis/tree/main/src/openjarvis/recipes/data).
 
 See [Contributing a Showcase Entry](CONTRIBUTING.md) for the template and the editorial conventions (screenshot sizing, what to redact, tone).
 

@@ -9,7 +9,7 @@ PowerShell, without WSL2 or Docker.
 In an elevated-or-regular PowerShell:
 
 ```powershell
-irm https://open-jarvis.github.io/OpenJarvis/install.ps1 | iex
+irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 | iex
 ```
 
 What it does:
@@ -39,7 +39,7 @@ absent:
 
 ```powershell
 $env:OPENJARVIS_SKIP_SERVICE = '1'
-irm https://open-jarvis.github.io/OpenJarvis/install.ps1 | iex
+irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 | iex
 ```
 
 The available env vars: `OPENJARVIS_SKIP_SERVICE`, `OPENJARVIS_SERVICE`,
@@ -111,7 +111,7 @@ uv sync --extra desktop --group desktop-native
 Or re-run the installer with `-Force`:
 
 ```powershell
-irm https://open-jarvis.github.io/OpenJarvis/install.ps1 | iex
+irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 | iex
 # (then re-run with the file directly, passing -Force)
 ```
 

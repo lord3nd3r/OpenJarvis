@@ -15,7 +15,7 @@ Create the user and installation directory:
 ```bash
 sudo useradd --system --create-home --home-dir /opt/openjarvis openjarvis
 sudo -u openjarvis python3 -m venv /opt/openjarvis/.venv
-sudo -u openjarvis git clone https://github.com/open-jarvis/OpenJarvis.git /opt/openjarvis/OpenJarvis
+sudo -u openjarvis git clone https://github.com/lord3nd3r/OpenJarvis.git /opt/openjarvis/OpenJarvis
 cd /opt/openjarvis/OpenJarvis && sudo -u openjarvis uv sync --extra server
 ```
 

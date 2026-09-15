@@ -668,7 +668,7 @@ class TestYouComSearch:
         WebSearchTool(engine="youcom").execute(query="test query")
 
         assert (
-            "youdotcom-integration/open-jarvis-openjarvis"
+            "youdotcom-integration/lord3nd3r-openjarvis"
             in (calls["headers"]["User-Agent"])
         )
 

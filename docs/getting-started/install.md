@@ -4,18 +4,18 @@
 
 | Platform | One-liner | Detailed guide |
 |---|---|---|
-| **macOS** | `curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh \| bash` | [macOS install](macos.md) |
-| **Linux** | `curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh \| bash` | [Linux install](linux.md) |
-| **WSL2 on Windows** | `curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh \| bash` (run inside Ubuntu) | [WSL2 install](wsl2.md) |
-| **Native Windows** | `irm https://open-jarvis.github.io/OpenJarvis/install.ps1 \| iex` | [Native Windows install](windows-native.md) |
-| **Desktop GUI** | Download from the [latest release](https://github.com/open-jarvis/OpenJarvis/releases) | — |
+| **macOS** | `curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh \| bash` | [macOS install](macos.md) |
+| **Linux** | `curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh \| bash` | [Linux install](linux.md) |
+| **WSL2 on Windows** | `curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh \| bash` (run inside Ubuntu) | [WSL2 install](wsl2.md) |
+| **Native Windows** | `irm https://lord3nd3r.github.io/OpenJarvis/install.ps1 \| iex` | [Native Windows install](windows-native.md) |
+| **Desktop GUI** | Download from the [latest release](https://github.com/lord3nd3r/OpenJarvis/releases) | — |
 
 The bash and PowerShell installers do the same thing on their respective hosts. The rest of this page documents the bash installer in detail; the [native Windows guide](windows-native.md) is the equivalent reference for PowerShell.
 
 ## Bash installer
 
 ```bash
-curl -fsSL https://open-jarvis.github.io/OpenJarvis/install.sh | bash
+curl -fsSL https://lord3nd3r.github.io/OpenJarvis/install.sh | bash
 ```
 
 The installer downloads everything for you — including [uv](https://docs.astral.sh/uv/)
@@ -26,8 +26,8 @@ model. **You don't need to install uv or any other prerequisite first.**
     This script is served straight from the project's own GitHub Pages site,
     so HTTPS always works. You may also see `https://openjarvis.ai/install.sh`
     referenced in older docs — that domain is community-operated and has had
-    intermittent TLS issues ([#337](https://github.com/open-jarvis/OpenJarvis/issues/337)).
-    The `open-jarvis.github.io` URL above is the canonical one.
+    intermittent TLS issues ([#337](https://github.com/lord3nd3r/OpenJarvis/issues/337)).
+    The `lord3nd3r.github.io` URL above is the canonical one.
 
 About 3 minutes on a typical broadband connection. Type `jarvis` to start chatting.
 
@@ -84,7 +84,7 @@ Local-first remains the default when no key is in env. Precedence is OpenRouter 
 | Variable | Default | Purpose |
 |---|---|---|
 | `OPENJARVIS_HOME` | `$HOME/.openjarvis` | Install location. |
-| `OPENJARVIS_REPO_URL` | `https://github.com/open-jarvis/OpenJarvis.git` | Source repo for the clone step. |
+| `OPENJARVIS_REPO_URL` | `https://github.com/lord3nd3r/OpenJarvis.git` | Source repo for the clone step. |
 
 ## Uninstall
 

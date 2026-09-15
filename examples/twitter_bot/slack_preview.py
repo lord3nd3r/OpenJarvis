@@ -49,7 +49,7 @@ FACTS = [
     "OpenJarvis is open source under Apache 2.0, built at Stanford at Hazy Research and the Scaling Intelligence Lab at SAIL. Because the tools for studying and building local-first AI should be available to everyone.",
     "OpenJarvis supports 27 channel integrations including Slack, Discord, Telegram, WhatsApp. Adding a new channel is one file implementing BaseChannel with connect, send, and disconnect.",
     "OpenJarvis supports multiple inference engines: Ollama, vLLM, SGLang, llama.cpp. jarvis init picks the right one for your hardware.",
-    "Install OpenJarvis by running git clone https://github.com/open-jarvis/OpenJarvis.git then cd OpenJarvis then uv sync. Use jarvis init to auto-detect hardware and configure the engine.",
+    "Install OpenJarvis by running git clone https://github.com/lord3nd3r/OpenJarvis.git then cd OpenJarvis then uv sync. Use jarvis init to auto-detect hardware and configure the engine.",
     "OpenJarvis memory and RAG supports four backends: SQLite FTS5 for keyword search, FAISS for vector similarity, ColBERT for token-level matching, and BM25 for probabilistic retrieval.",
     "OpenJarvis ships with nine example projects: deep_research, code_companion, messaging_hub, scheduled_ops, browser_assistant, security_scanner, daily_digest, doc_qa, and multi_model_router.",
 ]
@@ -158,7 +158,7 @@ def main() -> None:
             '- "four rag backends, swap with one config change. been '
             'testing colbert on our docs and the retrieval quality jump is real"\n\n'
             "Only real facts. No invented stats. "
-            "Link: https://github.com/open-jarvis/OpenJarvis",
+            "Link: https://github.com/lord3nd3r/OpenJarvis",
             agent="orchestrator",
             tools=["think", "memory_search", "channel_send"],
             temperature=0.7,

@@ -7,7 +7,7 @@ OpenJarvis includes a launchd property list (plist) for running the API server a
 Before installing the service, ensure that OpenJarvis is installed and the `jarvis` command is available at `/usr/local/bin/jarvis`. If you installed via `uv` or `pip` with a different prefix, adjust the path in the plist accordingly.
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git && cd OpenJarvis && uv sync --extra server
+git clone https://github.com/lord3nd3r/OpenJarvis.git && cd OpenJarvis && uv sync --extra server
 which jarvis  # Verify the installation path
 ```
 

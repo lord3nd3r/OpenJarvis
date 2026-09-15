@@ -7,7 +7,7 @@ A persistent operative agent that runs on a cron schedule, maintains state acros
 ### 1. Install and initialize
 
 ```bash
-git clone https://github.com/open-jarvis/OpenJarvis.git
+git clone https://github.com/lord3nd3r/OpenJarvis.git
 cd OpenJarvis
 uv sync --extra dev
 jarvis init --preset scheduled-monitor --force

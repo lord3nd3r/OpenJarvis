@@ -41,7 +41,7 @@ ENGINES = ("auto", "youcom", "tavily", "duckduckgo")
 # Identifies OpenJarvis to You.com. The keyless tier carries no API key, so the
 # User-Agent is the only attribution signal; sent to You.com hosts only.
 YOUCOM_USER_AGENT = (
-    f"openjarvis/{__version__} youdotcom-integration/open-jarvis-openjarvis"
+    f"openjarvis/{__version__} youdotcom-integration/lord3nd3r-openjarvis"
 )
 
 # Keyless tier exhaustion (402) and per-IP throttling (429) both mean "get a
@@ -49,7 +49,7 @@ YOUCOM_USER_AGENT = (
 _KEYLESS_LIMIT_STATUSES = (402, 429)
 YOUCOM_PLATFORM_URL = (
     "https://you.com/platform"
-    "?utm_source=open-jarvis-openjarvis&utm_medium=oss_integration"
+    "?utm_source=lord3nd3r-openjarvis&utm_medium=oss_integration"
     "&utm_campaign=2026-09-oss-integrations&utm_content=error-message"
 )
 _KEY_UPGRADE_HINT = (

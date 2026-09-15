@@ -43,7 +43,7 @@ OpenJarvis is that stack. It is a framework for local-first personal AI, built a
     Run the full chat UI locally with one script:
 
     ```bash
-    git clone https://github.com/open-jarvis/OpenJarvis.git
+    git clone https://github.com/lord3nd3r/OpenJarvis.git
     cd OpenJarvis
     ./scripts/quickstart.sh
     ```
@@ -59,16 +59,16 @@ OpenJarvis is that stack. It is a framework for local-first personal AI, built a
     **Step 1.** Start the backend:
 
     ```bash
-    git clone https://github.com/open-jarvis/OpenJarvis.git
+    git clone https://github.com/lord3nd3r/OpenJarvis.git
     cd OpenJarvis
     ./scripts/quickstart.sh
     ```
 
     **Step 2.** Download and open the desktop app:
 
-    [Download for macOS](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_universal.dmg){ .md-button .md-button--primary }
+    [Download for macOS](https://github.com/lord3nd3r/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_universal.dmg){ .md-button .md-button--primary }
 
-    Also available for [Windows](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_x64-setup.exe), [Linux (DEB)](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_amd64.deb), and [Linux (RPM)](https://github.com/open-jarvis/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis-1.0.1-1.x86_64.rpm). See the [Downloads](downloads.md) page for details.
+    Also available for [Windows](https://github.com/lord3nd3r/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_x64-setup.exe), [Linux (DEB)](https://github.com/lord3nd3r/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis_1.0.1_amd64.deb), and [Linux (RPM)](https://github.com/lord3nd3r/OpenJarvis/releases/download/desktop-v1.0.2/OpenJarvis-1.0.1-1.x86_64.rpm). See the [Downloads](downloads.md) page for details.
 
     The app connects to `http://localhost:8000` automatically.
 
