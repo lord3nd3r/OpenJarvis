@@ -253,6 +253,93 @@ async def _stream_openai(
                     pass
 
 
+XAI_BASE_URL = "https://api.x.ai/v1"
+
+# Server-side tools xAI runs on Grok's behalf. web_search lets the model browse
+# the web when it decides a query needs it; results come back as inline
+# ``[[N]](url)`` markdown citations in the text, which the chat UI renders.
+XAI_SERVER_TOOLS: list[dict[str, Any]] = [{"type": "web_search"}]
+
+
+def _responses_output_text(response: dict[str, Any]) -> str:
+    """Concatenate output_text blocks from a Responses API response object."""
+    parts: list[str] = []
+    for item in response.get("output") or []:
+        for block in item.get("content") or []:
+            if block.get("type") == "output_text" and block.get("text"):
+                parts.append(block["text"])
+    return "".join(parts)
+
+
+async def _stream_xai_responses(
+    model: str,
+    messages: Sequence[Message],
+    temperature: float,
+    max_tokens: int,
+    request_headers: dict[str, str] | None = None,
+) -> AsyncIterator[str]:
+    """Stream Grok through xAI's Responses API so server-side search works.
+
+    Search is not available on xAI's chat-completions endpoint, only as an
+    agentic tool on ``/v1/responses``, so Grok takes this path instead of
+    ``_stream_openai``.
+    """
+    keys = _load_keys(request_headers)
+    api_key = keys.get("XAI_API_KEY", "")
+    if not api_key:
+        raise ValueError("XAI_API_KEY not set — add it in the Cloud Models tab")
+
+    payload = {
+        "model": model,
+        "input": _to_openai_msgs(messages),
+        "tools": XAI_SERVER_TOOLS,
+        "temperature": temperature,
+        "max_output_tokens": max_tokens,
+        "stream": True,
+    }
+
+    async with httpx.AsyncClient(timeout=180) as client:
+        async with client.stream(
+            "POST",
+            f"{XAI_BASE_URL}/responses",
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        ) as resp:
+            if resp.status_code >= 400:
+                body = (await resp.aread()).decode("utf-8", errors="replace")
+                raise CloudProviderError(XAI_BASE_URL, resp.status_code, body[:300])
+            emitted = False
+            async for line in resp.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data = line[6:].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    event = json.loads(data)
+                except Exception:
+                    continue
+                etype = event.get("type", "")
+                if etype == "response.output_text.delta":
+                    delta = event.get("delta") or ""
+                    if delta:
+                        emitted = True
+                        yield delta
+                elif etype == "response.completed" and not emitted:
+                    # No delta events arrived (unexpected event naming or a
+                    # non-incremental reply): fall back to the final text.
+                    text = _responses_output_text(event.get("response") or {})
+                    if text:
+                        yield text
+                elif etype in ("response.failed", "error"):
+                    err = event.get("error") or event.get("response", {}).get("error")
+                    msg = err.get("message") if isinstance(err, dict) else str(err)
+                    raise CloudProviderError(XAI_BASE_URL, 502, msg or etype)
+
+
 async def _stream_anthropic(
     model: str,
     messages: Sequence[Message],
@@ -480,17 +567,11 @@ async def stream_cloud(
             yield token
 
     elif provider == "xai":
-        keys = _load_keys(request_headers)
-        api_key = keys.get("XAI_API_KEY", "")
-        if not api_key:
-            raise ValueError("XAI_API_KEY not set — add it in the Cloud Models tab")
-        async for token in _stream_openai(
+        async for token in _stream_xai_responses(
             model,
             messages,
             temperature,
             max_tokens,
-            base_url="https://api.x.ai/v1",
-            api_key_name="XAI_API_KEY",
             request_headers=request_headers,
         ):
             yield token

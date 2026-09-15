@@ -727,21 +727,17 @@ class TestCloudEngineGrok:
     def test_generate_routes_to_xai_client(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """Plain Grok chats use xAI's Responses API with server-side web_search."""
         for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY"):
             monkeypatch.delenv(var, raising=False)
 
-        fake_usage = SimpleNamespace(
-            prompt_tokens=11, completion_tokens=4, total_tokens=15
-        )
-        fake_choice = SimpleNamespace(
-            message=SimpleNamespace(content="grok-hello"),
-            finish_reason="stop",
-        )
         fake_resp = SimpleNamespace(
-            choices=[fake_choice], usage=fake_usage, model="grok-4.6"
+            output_text="grok-hello",
+            usage=SimpleNamespace(input_tokens=11, output_tokens=4, total_tokens=15),
+            model="grok-4.6",
         )
         fake_client = mock.MagicMock()
-        fake_client.chat.completions.create.return_value = fake_resp
+        fake_client.responses.create.return_value = fake_resp
 
         EngineRegistry.register_value("cloud", CloudEngine)
         engine = CloudEngine()
@@ -752,15 +748,19 @@ class TestCloudEngineGrok:
         )
         assert result["content"] == "grok-hello"
         assert result["usage"]["prompt_tokens"] == 11
+        assert result["usage"]["completion_tokens"] == 4
         assert result["cost_usd"] == pytest.approx(11 * 2.00 / 1e6 + 4 * 6.00 / 1e6)
-        # Routed to the xAI client, not OpenAI.
-        fake_client.chat.completions.create.assert_called_once()
-        assert fake_client.chat.completions.create.call_args.kwargs["model"] == (
-            "grok-4.6"
-        )
+        # Routed to the xAI client's Responses API, not chat completions.
+        fake_client.responses.create.assert_called_once()
+        kwargs = fake_client.responses.create.call_args.kwargs
+        assert kwargs["model"] == "grok-4.6"
+        assert kwargs["tools"] == [{"type": "web_search"}]
+        assert kwargs["input"] == [{"role": "user", "content": "Hi"}]
+        fake_client.chat.completions.create.assert_not_called()
 
     def test_generate_parses_tool_calls(self) -> None:
-        """Grok returns OpenAI-shaped tool_calls; they surface in the result."""
+        """With client tools, Grok uses chat completions and its OpenAI-shaped
+        tool_calls surface in the result."""
         fake_tool_call = SimpleNamespace(
             id="call_x",
             function=SimpleNamespace(name="get_weather", arguments='{"city": "NYC"}'),
@@ -781,12 +781,23 @@ class TestCloudEngineGrok:
         engine = CloudEngine()
         engine._xai_client = fake_client
 
+        weather_tool = {
+            "type": "function",
+            "function": {"name": "get_weather", "parameters": {"type": "object"}},
+        }
         result = engine.generate(
-            [Message(role=Role.USER, content="weather?")], model="grok-4.6"
+            [Message(role=Role.USER, content="weather?")],
+            model="grok-4.6",
+            tools=[weather_tool],
         )
         assert result["tool_calls"][0]["id"] == "call_x"
         assert result["tool_calls"][0]["name"] == "get_weather"
         assert result["tool_calls"][0]["arguments"] == '{"city": "NYC"}'
+        fake_client.chat.completions.create.assert_called_once()
+        assert fake_client.chat.completions.create.call_args.kwargs["tools"] == [
+            weather_tool
+        ]
+        fake_client.responses.create.assert_not_called()
 
     def test_generate_without_client_raises(
         self, monkeypatch: pytest.MonkeyPatch

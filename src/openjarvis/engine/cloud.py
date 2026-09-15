@@ -1180,6 +1180,10 @@ class CloudEngine(InferenceEngine):
             ]
         return result
 
+    # xAI runs these tools server-side; web_search lets Grok browse when it
+    # decides a query needs it. Only available on the Responses API.
+    _XAI_SERVER_TOOLS: List[Dict[str, Any]] = [{"type": "web_search"}]
+
     def _generate_grok(
         self,
         messages: Sequence[Message],
@@ -1191,6 +1195,52 @@ class CloudEngine(InferenceEngine):
     ) -> Dict[str, Any]:
         if self._xai_client is None:
             raise EngineConnectionError("xAI client not available — set XAI_API_KEY")
+        # Caller-supplied function tools use the chat-completions tool_calls
+        # contract the agent loop expects; plain chats go through the
+        # Responses API so xAI's server-side web_search is available.
+        if kwargs.get("tools"):
+            return self._generate_grok_chat(
+                messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            )
+        t0 = time.monotonic()
+        resp = self._xai_client.responses.create(
+            model=model,
+            input=messages_to_dicts(messages),
+            tools=self._XAI_SERVER_TOOLS,
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+        )
+        elapsed = time.monotonic() - t0
+        usage = getattr(resp, "usage", None)
+        prompt_tokens = getattr(usage, "input_tokens", 0) or 0
+        completion_tokens = getattr(usage, "output_tokens", 0) or 0
+        return {
+            "content": getattr(resp, "output_text", "") or "",
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": getattr(usage, "total_tokens", 0)
+                or prompt_tokens + completion_tokens,
+            },
+            "model": getattr(resp, "model", model),
+            "finish_reason": "stop",
+            "cost_usd": estimate_cost(model, prompt_tokens, completion_tokens),
+            "ttft": elapsed,
+        }
+
+    def _generate_grok_chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         create_kwargs: Dict[str, Any] = {
             "model": model,
             "messages": messages_to_dicts(messages),
@@ -1696,18 +1746,28 @@ class CloudEngine(InferenceEngine):
     ) -> AsyncIterator[str]:
         if self._xai_client is None:
             raise EngineConnectionError("xAI client not available")
-        create_kwargs: Dict[str, Any] = {
-            "model": model,
-            "messages": messages_to_dicts(messages),
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "stream": True,
-        }
-        resp = self._xai_client.chat.completions.create(**create_kwargs)
-        for chunk in resp:
-            delta = chunk.choices[0].delta if chunk.choices else None
-            if delta and delta.content:
-                yield delta.content
+        stream = self._xai_client.responses.create(
+            model=model,
+            input=messages_to_dicts(messages),
+            tools=self._XAI_SERVER_TOOLS,
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+            stream=True,
+        )
+        emitted = False
+        for event in stream:
+            etype = getattr(event, "type", "")
+            if etype == "response.output_text.delta":
+                delta = getattr(event, "delta", "") or ""
+                if delta:
+                    emitted = True
+                    yield delta
+            elif etype == "response.completed" and not emitted:
+                # No deltas arrived: fall back to the final response text.
+                final = getattr(event, "response", None)
+                text = getattr(final, "output_text", "") or ""
+                if text:
+                    yield text
 
     # -- stream_full: rich streaming with tool_calls support ----------------
 

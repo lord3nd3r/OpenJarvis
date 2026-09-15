@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import httpx
 import pytest
 
 from openjarvis.core.types import Message
@@ -65,24 +66,25 @@ def test_get_provider_keeps_openrouter_grok_on_openrouter():
 
 
 @pytest.mark.asyncio
-async def test_stream_cloud_routes_grok_to_xai_base_url(monkeypatch):
+async def test_stream_cloud_routes_grok_to_xai_responses_api(monkeypatch):
+    """Grok goes through the Responses API, not chat completions, so xAI's
+    server-side web_search tool is available."""
     monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
-    captured: dict[str, str] = {}
+    captured: dict[str, object] = {}
 
-    async def fake_stream_openai(
-        model,
-        messages,
-        temperature,
-        max_tokens,
-        base_url=None,
-        api_key_name=None,
-        request_headers=None,
+    async def fake_stream_xai_responses(
+        model, messages, temperature, max_tokens, request_headers=None
     ):
         captured["model"] = model
-        captured["base_url"] = base_url
-        captured["api_key_name"] = api_key_name
         yield "ok"
 
+    async def fake_stream_openai(*args, **kwargs):
+        raise AssertionError("grok must not use the chat-completions streamer")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(
+        cloud_router, "_stream_xai_responses", fake_stream_xai_responses
+    )
     monkeypatch.setattr(cloud_router, "_stream_openai", fake_stream_openai)
 
     tokens = [
@@ -94,8 +96,145 @@ async def test_stream_cloud_routes_grok_to_xai_base_url(monkeypatch):
 
     assert tokens == ["ok"]
     assert captured["model"] == "grok-4.6"
-    assert captured["base_url"] == "https://api.x.ai/v1"
-    assert captured["api_key_name"] == "XAI_API_KEY"
+
+
+def _sse(*events: dict) -> bytes:
+    import json as _json
+
+    lines = [f"data: {_json.dumps(e)}\n\n" for e in events]
+    lines.append("data: [DONE]\n\n")
+    return "".join(lines).encode()
+
+
+@pytest.mark.asyncio
+async def test_xai_responses_stream_sends_web_search_and_yields_text_deltas(
+    monkeypatch,
+):
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+    seen: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json as _json
+
+        seen["url"] = str(request.url)
+        seen["auth"] = request.headers.get("authorization")
+        seen["body"] = _json.loads(request.content)
+        return httpx.Response(
+            200,
+            content=_sse(
+                {"type": "response.created", "response": {"id": "r1"}},
+                {"type": "response.web_search_call.completed", "item_id": "ws1"},
+                {"type": "response.output_text.delta", "delta": "Hello "},
+                {"type": "response.output_text.delta", "delta": "[[1]](https://x.ai)"},
+                {
+                    "type": "response.completed",
+                    "response": {"citations": ["https://x.ai"]},
+                },
+            ),
+            headers={"content-type": "text/event-stream"},
+        )
+
+    real_client = httpx.AsyncClient
+
+    def fake_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(handler)
+        return real_client(*args, **kwargs)
+
+    monkeypatch.setattr(cloud_router.httpx, "AsyncClient", fake_client)
+
+    tokens = [
+        token
+        async for token in cloud_router.stream_cloud(
+            "grok-4.6",
+            [
+                Message(role="system", content="be brief"),
+                Message(role="user", content="hi"),
+            ],
+            temperature=0.2,
+            max_tokens=99,
+        )
+    ]
+
+    assert "".join(tokens) == "Hello [[1]](https://x.ai)"
+    assert seen["url"] == "https://api.x.ai/v1/responses"
+    assert seen["auth"] == "Bearer xai-test-key"
+    body = seen["body"]
+    assert body["model"] == "grok-4.6"
+    assert body["tools"] == [{"type": "web_search"}]
+    assert body["stream"] is True
+    assert body["max_output_tokens"] == 99
+    assert body["temperature"] == 0.2
+    assert body["input"] == [
+        {"role": "system", "content": "be brief"},
+        {"role": "user", "content": "hi"},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_xai_responses_stream_falls_back_to_completed_text(monkeypatch):
+    """If no delta events arrive, the final response text is still emitted."""
+    monkeypatch.setenv("XAI_API_KEY", "xai-test-key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=_sse(
+                {"type": "response.created", "response": {"id": "r1"}},
+                {
+                    "type": "response.completed",
+                    "response": {
+                        "output": [
+                            {
+                                "type": "message",
+                                "content": [
+                                    {"type": "output_text", "text": "final "},
+                                    {"type": "output_text", "text": "answer"},
+                                ],
+                            }
+                        ]
+                    },
+                },
+            ),
+            headers={"content-type": "text/event-stream"},
+        )
+
+    real_client = httpx.AsyncClient
+
+    def fake_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(handler)
+        return real_client(*args, **kwargs)
+
+    monkeypatch.setattr(cloud_router.httpx, "AsyncClient", fake_client)
+
+    tokens = [
+        token
+        async for token in cloud_router.stream_cloud(
+            "grok-4.6", [Message(role="user", content="hi")]
+        )
+    ]
+    assert "".join(tokens) == "final answer"
+
+
+@pytest.mark.asyncio
+async def test_xai_responses_stream_surfaces_provider_errors(monkeypatch):
+    monkeypatch.setenv("XAI_API_KEY", "xai-bad-key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": "Incorrect API key provided."})
+
+    real_client = httpx.AsyncClient
+
+    def fake_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(handler)
+        return real_client(*args, **kwargs)
+
+    monkeypatch.setattr(cloud_router.httpx, "AsyncClient", fake_client)
+
+    with pytest.raises(ValueError, match="Incorrect API key"):
+        async for _ in cloud_router.stream_cloud(
+            "grok-4.6", [Message(role="user", content="hi")]
+        ):
+            pass
 
 
 @pytest.mark.asyncio
