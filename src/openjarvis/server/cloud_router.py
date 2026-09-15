@@ -46,16 +46,41 @@ _LOCAL_HF_ORGS = (
 )
 
 
-def _load_keys() -> dict[str, str]:
-    """Read available cloud keys every call so live updates are picked up."""
+def _load_keys(headers: dict[str, str] | None = None) -> dict[str, str]:
+    """Read available cloud keys every call so live updates are picked up.
+
+    Checks headers first (for web mode), then file, then process environment.
+    """
     keys: dict[str, str] = {}
-    # File first, then fall back to process environment
+
+    # Check headers first (for web mode) — frontend passes keys as X-Cloud-API-* headers
+    if headers:
+        for key_name in (
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "GEMINI_API_KEY",
+            "GOOGLE_API_KEY",
+            "OPENROUTER_API_KEY",
+            "MINIMAX_API_KEY",
+            "XAI_API_KEY",
+            "DEEPSEEK_API_KEY",
+        ):
+            header_key = f"X-Cloud-API-{key_name}"
+            if header_key in headers:
+                keys[key_name] = headers[header_key]
+
+    # File next (cloud-keys.env)
     if _CLOUD_ENV_FILE.exists():
         for raw in _CLOUD_ENV_FILE.read_text().splitlines():
             line = raw.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
-                keys[k.strip()] = v.strip()
+                k_stripped = k.strip()
+                v_stripped = v.strip()
+                # Don't override keys from headers
+                if k_stripped not in keys:
+                    keys[k_stripped] = v_stripped
+
     # Process env can override (e.g. during testing)
     for name in (
         "OPENAI_API_KEY",
@@ -69,7 +94,10 @@ def _load_keys() -> dict[str, str]:
     ):
         val = os.environ.get(name)
         if val:
-            keys[name] = val
+            # Don't override keys from headers
+            if name not in keys:
+                keys[name] = val
+
     return keys
 
 
@@ -171,8 +199,9 @@ async def _stream_openai(
     max_tokens: int,
     base_url: str = "https://api.openai.com/v1",
     api_key_name: str = "OPENAI_API_KEY",
+    request_headers: dict[str, str] | None = None,
 ) -> AsyncIterator[str]:
-    keys = _load_keys()
+    keys = _load_keys(request_headers)
     api_key = keys.get(api_key_name, "")
     if not api_key:
         raise ValueError(f"{api_key_name} not set — add it in the Cloud Models tab")
@@ -216,8 +245,9 @@ async def _stream_anthropic(
     messages: Sequence[Message],
     temperature: float,
     max_tokens: int,
+    request_headers: dict[str, str] | None = None,
 ) -> AsyncIterator[str]:
-    keys = _load_keys()
+    keys = _load_keys(request_headers)
     api_key = keys.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY not set — add it in the Cloud Models tab")
@@ -264,8 +294,9 @@ async def _stream_google(
     messages: Sequence[Message],
     temperature: float,
     max_tokens: int,
+    request_headers: dict[str, str] | None = None,
 ) -> AsyncIterator[str]:
-    keys = _load_keys()
+    keys = _load_keys(request_headers)
     api_key = keys.get("GEMINI_API_KEY") or keys.get("GOOGLE_API_KEY", "")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not set — add it in the Cloud Models tab")
@@ -375,24 +406,28 @@ async def stream_cloud(
     messages: Sequence[Message],
     temperature: float = 0.7,
     max_tokens: int = 1024,
+    request_headers: dict[str, str] | None = None,
 ) -> AsyncIterator[str]:
-    """Stream tokens from a cloud provider for the given model."""
+    """Stream tokens from a cloud provider for the given model.
+
+    request_headers: Optional HTTP headers from the client (for web mode API keys).
+    """
     provider = get_provider(model)
 
     if provider == "openai":
-        async for token in _stream_openai(model, messages, temperature, max_tokens):
+        async for token in _stream_openai(model, messages, temperature, max_tokens, request_headers=request_headers):
             yield token
 
     elif provider == "anthropic":
-        async for token in _stream_anthropic(model, messages, temperature, max_tokens):
+        async for token in _stream_anthropic(model, messages, temperature, max_tokens, request_headers=request_headers):
             yield token
 
     elif provider == "google":
-        async for token in _stream_google(model, messages, temperature, max_tokens):
+        async for token in _stream_google(model, messages, temperature, max_tokens, request_headers=request_headers):
             yield token
 
     elif provider == "openrouter":
-        keys = _load_keys()
+        keys = _load_keys(request_headers)
         api_key = keys.get("OPENROUTER_API_KEY", "")
         if not api_key:
             raise ValueError(
@@ -405,11 +440,12 @@ async def stream_cloud(
             max_tokens,
             base_url="https://openrouter.ai/api/v1",
             api_key_name="OPENROUTER_API_KEY",
+            request_headers=request_headers,
         ):
             yield token
 
     elif provider == "minimax":
-        keys = _load_keys()
+        keys = _load_keys(request_headers)
         api_key = keys.get("MINIMAX_API_KEY", "")
         if not api_key:
             raise ValueError("MINIMAX_API_KEY not set — add it in the Cloud Models tab")
@@ -420,11 +456,12 @@ async def stream_cloud(
             max_tokens,
             base_url="https://api.minimax.io/v1",
             api_key_name="MINIMAX_API_KEY",
+            request_headers=request_headers,
         ):
             yield token
 
     elif provider == "xai":
-        keys = _load_keys()
+        keys = _load_keys(request_headers)
         api_key = keys.get("XAI_API_KEY", "")
         if not api_key:
             raise ValueError("XAI_API_KEY not set — add it in the Cloud Models tab")
@@ -435,11 +472,12 @@ async def stream_cloud(
             max_tokens,
             base_url="https://api.x.ai/v1",
             api_key_name="XAI_API_KEY",
+            request_headers=request_headers,
         ):
             yield token
 
     elif provider == "deepseek":
-        keys = _load_keys()
+        keys = _load_keys(request_headers)
         api_key = keys.get("DEEPSEEK_API_KEY", "")
         if not api_key:
             raise ValueError(
@@ -452,6 +490,7 @@ async def stream_cloud(
             max_tokens,
             base_url="https://api.deepseek.com/v1",
             api_key_name="DEEPSEEK_API_KEY",
+            request_headers=request_headers,
         ):
             yield token
 

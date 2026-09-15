@@ -95,6 +95,34 @@ export const getApiKey = (): string => {
   return '';
 };
 
+// Get cloud API keys stored in localStorage (web mode only)
+export const getCloudKeysFromStorage = (): Record<string, string> => {
+  const keys: Record<string, string> = {};
+  const cloudProviders = [
+    'OPENAI_API_KEY',
+    'ANTHROPIC_API_KEY',
+    'GEMINI_API_KEY',
+    'OPENROUTER_API_KEY',
+    'XAI_API_KEY',
+    'DEEPSEEK_API_KEY',
+    'MINIMAX_API_KEY',
+  ];
+
+  cloudProviders.forEach((key) => {
+    const storageKey = `cloud_key_${key}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        keys[key] = atob(stored);
+      } catch {
+        // Invalid base64, skip
+      }
+    }
+  });
+
+  return keys;
+};
+
 // Build request headers with the Bearer Authorization token when a local key
 // is configured, merging any caller-supplied headers. Adds no Authorization
 // header when no key is set, so keyless local dev is byte-for-byte unchanged.
@@ -117,6 +145,15 @@ export const apiFetch = (
   const headers = authHeaders(
     (init.headers as Record<string, string> | undefined) ?? {},
   );
+
+  // In web mode (non-Tauri), pass cloud API keys as headers for the backend to use
+  if (!isTauri()) {
+    const cloudKeys = getCloudKeysFromStorage();
+    Object.entries(cloudKeys).forEach(([key, value]) => {
+      headers[`X-Cloud-API-${key}`] = value;
+    });
+  }
+
   return fetch(`${getBase()}${path}`, { ...init, headers });
 };
 

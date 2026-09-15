@@ -315,6 +315,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
             trace_store=getattr(request.app.state, "trace_store", None),
             app_config=config,
             bus=getattr(request.app.state, "bus", None),
+            request_headers=dict(request.headers),
             memory_service=getattr(request.app.state, "memory_service", None),
         )
 
@@ -919,6 +920,7 @@ async def _handle_stream(
     app_config=None,
     bus=None,
     memory_service=None,
+    request_headers=None,
 ):
     """Stream response using SSE format.
 
@@ -976,7 +978,7 @@ async def _handle_stream(
             # is_cloud attribute.
             if use_cloud:
                 token_iter = stream_cloud(
-                    model, messages, req.temperature, req.max_tokens
+                    model, messages, req.temperature, req.max_tokens, request_headers or {}
                 )
             else:
                 # Use engine.stream() by default (preserves mock-engine

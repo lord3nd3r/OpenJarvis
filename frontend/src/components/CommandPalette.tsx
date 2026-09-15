@@ -127,12 +127,18 @@ export function CommandPalette() {
   const desktopKeyStorage = isTauri();
 
   const refreshCloudKeyStatus = useCallback(async () => {
-    if (!desktopKeyStorage) {
-      setCloudKeyStatus({});
-      return;
-    }
     try {
-      setCloudKeyStatus(await getCloudKeyStatus());
+      if (desktopKeyStorage) {
+        setCloudKeyStatus(await getCloudKeyStatus());
+      } else {
+        // For web mode, check localStorage
+        const status: Record<string, boolean> = {};
+        CLOUD_PROVIDERS.forEach((provider) => {
+          const storageKey = `cloud_key_${provider.envKey}`;
+          status[provider.envKey] = !!localStorage.getItem(storageKey);
+        });
+        setCloudKeyStatus(status);
+      }
       setCloudKeyError(null);
     } catch (e: any) {
       setCloudKeyError(e?.message || 'Failed to read cloud key status');
@@ -250,7 +256,17 @@ export function CommandPalette() {
     setCloudKeyError(null);
 
     try {
-      await saveCloudKey(provider.envKey, keyValue);
+      if (desktopKeyStorage) {
+        await saveCloudKey(provider.envKey, keyValue);
+      } else {
+        // For web mode, store in localStorage as base64 for minimal obfuscation
+        const storageKey = `cloud_key_${provider.envKey}`;
+        if (keyValue) {
+          localStorage.setItem(storageKey, btoa(keyValue));
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      }
       setApiKeys((prev) => ({ ...prev, [provider.envKey]: '' }));
       await refreshCloudKeyStatus();
       useAppStore.getState().addLogEntry({
@@ -485,7 +501,7 @@ export function CommandPalette() {
               <div className="text-[11px] mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
                 {desktopKeyStorage
                   ? 'Add your API keys to use cloud models. Keys are stored in secure desktop storage.'
-                  : 'Configure cloud provider keys in the server environment to use cloud models.'}
+                  : 'Add your API keys to use cloud models. Keys are stored in your browser.'}
               </div>
 
               {CLOUD_PROVIDERS.map((provider) => {
@@ -517,9 +533,9 @@ export function CommandPalette() {
                           onChange={(e) => setApiKeys((prev) => ({ ...prev, [provider.envKey]: e.target.value }))}
                           onBlur={() => handleKeyBlur(provider)}
                           placeholder={hasSavedKey ? 'Saved in secure storage' : provider.envKey}
-                          disabled={!desktopKeyStorage || isSaving}
+                          disabled={isSaving}
                           className="flex-1 text-xs px-2 py-1.5 bg-transparent outline-none font-mono"
-                          style={{ color: 'var(--color-text)' }}
+                          style={{ color: 'var(--color-text)', opacity: isSaving ? 0.5 : 1 }}
                         />
                         <button
                           onClick={() => setShowKeys((prev) => ({ ...prev, [provider.envKey]: !prev[provider.envKey] }))}
