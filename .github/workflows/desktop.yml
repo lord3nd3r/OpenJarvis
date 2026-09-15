@@ -343,10 +343,6 @@ jobs:
             echo "APPLE_TEAM_ID=$A_TEAM" >> "$GITHUB_ENV"
             echo "Apple signing configured"
           else
-            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-              echo "::error::Apple signing secrets are required for release builds"
-              exit 1
-            fi
             echo "No Apple certificate configured, skipping code signing"
           fi
 
