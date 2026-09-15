@@ -543,12 +543,12 @@ export function SavingsDashboard({ apiUrl }: { apiUrl: string }) {
             {optInEnabled ? `Sharing as "${displayName}"` : 'Share Your Savings'}
           </button>
           <a
-            href="https://open-jarvis.github.io/OpenJarvis/leaderboard"
+            href="https://github.com/lord3nd3r/OpenJarvis"
             target="_blank"
             rel="noopener noreferrer"
             style={{ fontSize: 12, color: colors.accent, textDecoration: 'none' }}
           >
-            View Leaderboard ↗
+            GitHub Repository ↗
           </a>
         </div>
       )}

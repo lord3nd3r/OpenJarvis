@@ -257,7 +257,7 @@ export function SystemPanel() {
           </button>
 
           <a
-            href="https://open-jarvis.github.io/OpenJarvis/leaderboard"
+            href="https://github.com/lord3nd3r/OpenJarvis"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 mt-1.5 px-3 py-1.5 text-[11px] rounded-lg transition-colors"
@@ -266,7 +266,7 @@ export function SystemPanel() {
             onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-tertiary)')}
           >
             <ExternalLink size={10} />
-            View Leaderboard
+            GitHub Repository
           </a>
         </section>
       </div>
