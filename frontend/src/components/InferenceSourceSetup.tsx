@@ -1,5 +1,5 @@
 import { useReducer, useState, type FormEvent } from 'react';
-import { ArrowLeft, Cpu, Download, Loader2, Server, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Cloud, Cpu, Download, Loader2, Server, ShieldCheck } from 'lucide-react';
 import {
   resetInferenceSource,
   stageInferenceSource,
@@ -7,8 +7,8 @@ import {
   type InferenceSource,
 } from '../lib/api';
 
-export type InferenceSetupStep = 'choose' | 'ollama' | 'custom';
-export type InferenceSetupAction = 'choose_ollama' | 'choose_custom' | 'back';
+export type InferenceSetupStep = 'choose' | 'ollama' | 'custom' | 'cloud';
+export type InferenceSetupAction = 'choose_ollama' | 'choose_custom' | 'choose_cloud' | 'back';
 export type InferenceSourceSubmission = InferenceSource & { apiKey?: string };
 
 /** Pure navigation state: merely inspecting a source can never start setup. */
@@ -21,6 +21,8 @@ export function inferenceSetupReducer(
       return 'ollama';
     case 'choose_custom':
       return 'custom';
+    case 'choose_cloud':
+      return 'cloud';
     case 'back':
       return 'choose';
     default:
@@ -83,7 +85,7 @@ function SetupFrame({ children }: { children: React.ReactNode }) {
 export function InferenceSourceChooser({
   onChoose,
 }: {
-  onChoose: (source: 'ollama' | 'custom') => void;
+  onChoose: (source: 'ollama' | 'custom' | 'cloud') => void;
 }) {
   return (
     <SetupFrame>
@@ -117,6 +119,22 @@ export function InferenceSourceChooser({
             </span>
             <span className="block text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
               Connect to LM Studio, vLLM, SGLang, llama.cpp, MLX, or another compatible endpoint. Ollama stays off.
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onChoose('cloud')}
+          className="flex items-start gap-4 p-4 rounded-xl text-left transition-all cursor-pointer"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <Cloud size={22} className="shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} />
+          <span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+              Cloud Provider (xAI / Grok, DeepSeek, OpenAI...)
+            </span>
+            <span className="block text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              Use cloud API keys directly without running local models on this computer.
             </span>
           </span>
         </button>
@@ -340,6 +358,93 @@ export function CustomEndpointSetup({
   );
 }
 
+export function CloudProviderSetup({
+  onCancel,
+  onConfirm,
+  busy = false,
+  error = '',
+}: {
+  onCancel: () => void;
+  onConfirm: (source: InferenceSourceSubmission) => void;
+  busy?: boolean;
+  error?: string;
+}) {
+  const [provider, setProvider] = useState('xai');
+  const [apiKey, setApiKey] = useState('');
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    onConfirm({
+      kind: provider as any,
+      model: provider,
+      apiKey: apiKey.trim() || undefined,
+    });
+  };
+
+  const fieldStyle = {
+    background: 'var(--color-surface)',
+    color: 'var(--color-text)',
+    border: '1px solid var(--color-border)',
+  };
+
+  return (
+    <SetupFrame>
+      <BackButton onClick={onCancel} label="Cancel" disabled={busy} />
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
+            Select Cloud Provider
+          </h2>
+          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            Use cloud model inference with your provider API key.
+          </p>
+        </div>
+        <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+          Provider
+          <select
+            aria-label="Provider"
+            value={provider}
+            onChange={(event) => setProvider(event.target.value)}
+            className="block w-full mt-1.5 px-3 py-2 rounded-lg text-sm outline-none"
+            style={fieldStyle}
+          >
+            <option value="xai">xAI (Grok)</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="minimax">MiniMax</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="openrouter">OpenRouter</option>
+          </select>
+        </label>
+        <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+          API key
+          <input
+            aria-label="API key"
+            type="password"
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            placeholder="Paste your API key..."
+            autoComplete="off"
+            className="block w-full mt-1.5 px-3 py-2 rounded-lg text-sm outline-none"
+            style={fieldStyle}
+          />
+        </label>
+        {error && <SetupError message={error} />}
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ background: 'var(--color-accent)', color: 'white' }}
+        >
+          {busy && <Loader2 size={16} className="animate-spin" />}
+          {busy ? 'Saving...' : 'Save and continue'}
+        </button>
+      </form>
+    </SetupFrame>
+  );
+}
+
 export function InferenceSourceSetup({ onStarted }: { onStarted: () => void }) {
   const [step, dispatch] = useReducer(inferenceSetupReducer, 'choose');
   const [busy, setBusy] = useState(false);
@@ -377,9 +482,27 @@ export function InferenceSourceSetup({ onStarted }: { onStarted: () => void }) {
       />
     );
   }
+  if (step === 'cloud') {
+    return (
+      <CloudProviderSetup
+        busy={busy}
+        error={error}
+        onCancel={() => dispatch('back')}
+        onConfirm={(source) => void begin(source)}
+      />
+    );
+  }
   return (
     <InferenceSourceChooser
-      onChoose={(source) => dispatch(source === 'ollama' ? 'choose_ollama' : 'choose_custom')}
+      onChoose={(source) =>
+        dispatch(
+          source === 'ollama'
+            ? 'choose_ollama'
+            : source === 'custom'
+            ? 'choose_custom'
+            : 'choose_cloud',
+        )
+      }
     />
   );
 }

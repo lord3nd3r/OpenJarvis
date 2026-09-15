@@ -510,10 +510,10 @@ export function SettingsPage() {
               >
                 <option value="ollama">Bundled Ollama (default)</option>
                 <option value="custom">Custom OpenAI-compatible server</option>
-                {!isTauri() && <option value="cloud">Cloud provider</option>}
+                <option value="cloud">Cloud provider</option>
               </select>
             </SettingRow>
-            {srcKind === 'cloud' && !isTauri() && (
+            {srcKind === 'cloud' && (
               <SettingRow label="Provider" description="Select a cloud provider with API key configured">
                 <select value={cloudProvider} onChange={(e) => { setCloudProvider(e.target.value); setSrcMsg(''); }}
                   className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"

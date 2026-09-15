@@ -28,14 +28,18 @@ export async function getCloudKeyStatus(): Promise<CloudKeyStatus> {
 }
 
 export async function saveCloudKey(keyName: string, keyValue: string): Promise<void> {
-  if (!isTauri()) {
-    throw new Error('Cloud API keys can be saved in the desktop app only.');
+  if (keyValue) {
+    localStorage.setItem(`cloud_key_${keyName}`, btoa(keyValue));
+  } else {
+    localStorage.removeItem(`cloud_key_${keyName}`);
   }
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('save_cloud_key', { keyName, keyValue });
-  } catch (e: any) {
-    throw new Error(e?.message ?? e ?? 'Failed to save cloud key');
+  if (isTauri()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('save_cloud_key', { keyName, keyValue });
+    } catch (e: any) {
+      throw new Error(e?.message ?? e ?? 'Failed to save cloud key');
+    }
   }
 }
 
@@ -141,7 +145,6 @@ export const authHeaders = (
 // In web mode (non-Tauri), cloud API keys live in localStorage and are passed
 // to the backend as X-Cloud-API-* headers. Desktop stores them server-side.
 export const cloudKeyHeaders = (): Record<string, string> => {
-  if (isTauri()) return {};
   const headers: Record<string, string> = {};
   Object.entries(getCloudKeysFromStorage()).forEach(([key, value]) => {
     headers[`X-Cloud-API-${key}`] = value;
