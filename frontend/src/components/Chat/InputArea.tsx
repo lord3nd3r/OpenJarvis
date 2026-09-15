@@ -578,7 +578,7 @@ export function InputArea() {
 
   const toggleVoiceMode = () => {
     if (!voiceMode && !speechAvailable) {
-      toast.error('Voice mode needs a speech backend (Whisper) on the server');
+      toast.error('Voice mode needs microphone support or a speech backend');
       return;
     }
     updateSettings({ voiceMode: !voiceMode });

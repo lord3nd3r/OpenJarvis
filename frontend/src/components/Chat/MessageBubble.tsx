@@ -5,13 +5,15 @@ import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import 'katex/dist/katex.min.css';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX } from 'lucide-react';
 import { AudioPlayer } from './AudioPlayer';
 import { ToolCallCard } from './ToolCallCard';
 import { ResearchTimeline } from './ResearchTimeline';
 import { rehypeCitations } from '../../lib/rehype-citations';
 import { XRayFooter } from './XRayFooter';
 import type { ChatMessage } from '../../types';
+import { synthesizeSpeech } from '../../lib/api';
+import { toSpeakableText } from '../../lib/voice-text';
 
 function stripThinkTags(text: string): string {
   let cleaned = text.replace(/<think>[\s\S]*?<\/think>\s*/gi, '');
@@ -100,6 +102,74 @@ function CopyMessageButton({ content }: { content: string }) {
   );
 }
 
+function SpeakMessageButton({ content }: { content: string }) {
+  const [speaking, setSpeaking] = useState(false);
+
+  const handleSpeak = async () => {
+    if (speaking) {
+      window.speechSynthesis?.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const text = toSpeakableText(content);
+    if (!text) return;
+    setSpeaking(true);
+
+    try {
+      let blob: Blob | null = null;
+      try {
+        blob = await synthesizeSpeech(text);
+      } catch {
+        blob = null;
+      }
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          setSpeaking(false);
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          setSpeaking(false);
+        };
+        await audio.play();
+      } else {
+        const synth = window.speechSynthesis;
+        if (!synth) {
+          setSpeaking(false);
+          return;
+        }
+        if (synth.paused) {
+          try { synth.resume(); } catch {}
+        }
+        const u = new SpeechSynthesisUtterance(text);
+        const voices = synth.getVoices();
+        const voice = voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0];
+        if (voice) u.voice = voice;
+        u.onend = () => setSpeaking(false);
+        u.onerror = () => setSpeaking(false);
+        synth.cancel();
+        synth.speak(u);
+      }
+    } catch {
+      setSpeaking(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleSpeak}
+      className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+      style={{ color: speaking ? 'var(--color-accent)' : 'var(--color-text-tertiary)' }}
+      title={speaking ? 'Stop speaking' : 'Read aloud'}
+    >
+      {speaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+    </button>
+  );
+}
+
 export function MessageBubble({ message, isLive = false }: Props) {
   const isUser = message.role === 'user';
 
@@ -178,9 +248,10 @@ export function MessageBubble({ message, isLive = false }: Props) {
         </div>
       )}
 
-      {/* Footer: copy + x-ray */}
+      {/* Footer: copy + read aloud + x-ray */}
       <div className="flex items-center gap-2 mt-1.5">
         <CopyMessageButton content={cleanContent} />
+        <SpeakMessageButton content={cleanContent} />
       </div>
       <XRayFooter
         usage={message.usage}

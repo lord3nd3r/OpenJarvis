@@ -45,20 +45,49 @@ function speakWithBrowser(text: string): Promise<void> {
   return new Promise((resolve) => {
     const synth = window.speechSynthesis;
     if (!synth) return resolve();
+    if (synth.paused) {
+      try { synth.resume(); } catch {}
+    }
     const u = new SpeechSynthesisUtterance(text);
-    const voice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith('en'));
-    if (voice) u.voice = voice;
-    // Some platforms (Firefox on Linux without speech-dispatcher) accept the
-    // utterance but never fire end/error; don't let that keep the mic muted.
-    const guard = window.setTimeout(resolve, 1500 + text.length * 80);
-    const done = () => {
-      window.clearTimeout(guard);
-      resolve();
+
+    const loadVoicesAndSpeak = () => {
+      const voices = synth.getVoices();
+      const voice = voices.find((v) => v.lang.toLowerCase().startsWith('en')) || voices[0];
+      if (voice) u.voice = voice;
+      const guard = window.setTimeout(resolve, 2000 + text.length * 80);
+      const done = () => {
+        window.clearTimeout(guard);
+        resolve();
+      };
+      u.onend = done;
+      u.onerror = done;
+      try {
+        synth.cancel();
+        synth.speak(u);
+      } catch {
+        done();
+      }
     };
-    u.onend = done;
-    u.onerror = done;
-    synth.cancel();
-    synth.speak(u);
+
+    if (synth.getVoices().length > 0) {
+      loadVoicesAndSpeak();
+    } else {
+      let fired = false;
+      const onVoices = () => {
+        if (fired) return;
+        fired = true;
+        synth.removeEventListener('voiceschanged', onVoices);
+        loadVoicesAndSpeak();
+      };
+      synth.addEventListener('voiceschanged', onVoices);
+      window.setTimeout(() => {
+        if (!fired) {
+          fired = true;
+          try { synth.removeEventListener('voiceschanged', onVoices); } catch {}
+          loadVoicesAndSpeak();
+        }
+      }, 300);
+    }
   });
 }
 
@@ -85,6 +114,8 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
   const ctxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const lastBrowserTranscriptRef = useRef<string>('');
   const chunksRef = useRef<Blob[]>([]);
   const pollRef = useRef<number | null>(null);
   const mimeRef = useRef('');
@@ -192,6 +223,11 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
   const poll = useCallback(async () => {
     const analyser = analyserRef.current;
     if (!analyser || !activeRef.current) return;
+
+    if (ctxRef.current && ctxRef.current.state === 'suspended') {
+      try { await ctxRef.current.resume(); } catch {}
+    }
+
     const buf = new Float32Array(analyser.fftSize);
     analyser.getFloatTimeDomainData(buf);
     let sum = 0;
@@ -235,7 +271,13 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
         const result = await transcribeAudio(cut.blob, `voice.${extFor(mimeRef.current)}`);
         await handleTranscript(result.text);
       } catch (e: any) {
-        setError(e?.message || 'Transcription failed');
+        if (lastBrowserTranscriptRef.current) {
+          const fallbackText = lastBrowserTranscriptRef.current;
+          lastBrowserTranscriptRef.current = '';
+          await handleTranscript(fallbackText);
+        } else {
+          setError(e?.message || 'Transcription failed');
+        }
       } finally {
         if (activeRef.current && !mutedRef.current) {
           setStatus((s) => (s === 'transcribing' ? 'listening' : s));
@@ -249,6 +291,15 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
     if (pollRef.current !== null) {
       window.clearInterval(pollRef.current);
       pollRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
     }
     const rec = recorderRef.current;
     if (rec && rec.state !== 'inactive') {
@@ -281,6 +332,9 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
       });
       streamRef.current = stream;
       const ctx = new AudioContext();
+      if (ctx.state === 'suspended') {
+        try { await ctx.resume(); } catch {}
+      }
       ctxRef.current = ctx;
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
@@ -290,6 +344,38 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
       mimeRef.current = pickMimeType();
       activeRef.current = true;
       startRecorder();
+
+      // Start browser Web Speech API fallback if available
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = false;
+          rec.lang = 'en-US';
+          rec.onresult = (e: any) => {
+            if (mutedRef.current || busyRef.current) return;
+            let text = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+              if (e.results[i].isFinal) text += e.results[i][0].transcript;
+            }
+            if (text.trim()) {
+              lastBrowserTranscriptRef.current = text.trim();
+              // If not using server Whisper, trigger handleTranscript directly
+              void handleTranscript(text.trim());
+            }
+          };
+          rec.onend = () => {
+            if (activeRef.current && recognitionRef.current === rec) {
+              try { rec.start(); } catch {}
+            }
+          };
+          rec.onerror = () => {};
+          rec.start();
+          recognitionRef.current = rec;
+        } catch {}
+      }
+
       let inFlight = false;
       pollRef.current = window.setInterval(() => {
         if (inFlight) return;
@@ -304,7 +390,7 @@ export function useVoiceMode({ enabled, wakeWord, busy, onCommand }: Options) {
       setStatus('error');
       stop();
     }
-  }, [poll, startRecorder, stop]);
+  }, [poll, startRecorder, stop, handleTranscript]);
 
   useEffect(() => {
     if (enabled) void start();

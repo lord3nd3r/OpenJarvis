@@ -3,6 +3,10 @@ import { transcribeAudio, fetchSpeechHealth } from '../lib/api';
 
 export type SpeechState = 'idle' | 'recording' | 'transcribing';
 
+const isBrowserSpeechSupported = (): boolean => {
+  return typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+};
+
 export function useSpeech() {
   const [state, setState] = useState<SpeechState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -10,16 +14,19 @@ export function useSpeech() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const browserResultRef = useRef<string>('');
 
-  // Check if speech backend is available on mount
+  // Check if speech backend or browser speech recognition is available on mount
   useEffect(() => {
     fetchSpeechHealth()
-      .then((health) => setAvailable(health.available))
-      .catch(() => setAvailable(false));
+      .then((health) => setAvailable(health.available || isBrowserSpeechSupported()))
+      .catch(() => setAvailable(isBrowserSpeechSupported()));
   }, []);
 
   const startRecording = useCallback(async (): Promise<void> => {
     setError(null);
+    browserResultRef.current = '';
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setError('Microphone not supported in this browser');
@@ -39,6 +46,26 @@ export function useSpeech() {
 
       recorder.start();
       mediaRecorderRef.current = recorder;
+
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = false;
+          rec.lang = 'en-US';
+          rec.onresult = (e: any) => {
+            let text = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+              if (e.results[i].isFinal) text += e.results[i][0].transcript;
+            }
+            if (text.trim()) browserResultRef.current = text.trim();
+          };
+          rec.start();
+          recognitionRef.current = rec;
+        } catch {}
+      }
+
       setState('recording');
     } catch (err) {
       setError('Microphone access denied');
@@ -48,6 +75,12 @@ export function useSpeech() {
 
   const stopRecording = useCallback(async (): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+
       const recorder = mediaRecorderRef.current;
       if (!recorder || recorder.state !== 'recording') {
         reject(new Error('Not recording'));
@@ -70,9 +103,13 @@ export function useSpeech() {
           resolve(result.text);
         } catch (err) {
           setState('idle');
-          const msg = err instanceof Error ? err.message : 'Transcription failed';
-          setError(msg);
-          reject(err);
+          if (browserResultRef.current) {
+            resolve(browserResultRef.current);
+          } else {
+            const msg = err instanceof Error ? err.message : 'Transcription failed';
+            setError(msg);
+            reject(err);
+          }
         }
       };
 
