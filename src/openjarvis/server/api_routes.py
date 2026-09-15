@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -1018,6 +1019,78 @@ async def transcribe_speech(request: Request):
     }
 
 
+class SynthesizeRequest(BaseModel):
+    text: str
+    voice_id: str = ""
+    speed: Optional[float] = None
+
+
+_AUDIO_MEDIA_TYPES = {"wav": "audio/wav", "mp3": "audio/mpeg", "ogg": "audio/ogg"}
+
+
+def _voice_session(request: Request):
+    """One TTS backend cache per server process (lazy, like the CLI's)."""
+    session = getattr(request.app.state, "voice_session", None)
+    if session is None:
+        from openjarvis.cli._voice_chat import VoiceSession
+
+        session = VoiceSession(config=getattr(request.app.state, "config", None))
+        request.app.state.voice_session = session
+    return session
+
+
+@speech_router.post("/synthesize")
+async def synthesize_speech(body: SynthesizeRequest, request: Request):
+    """Turn text into audio using the configured TTS backend.
+
+    Falls through the backend order the same way the CLI voice chat does. A
+    501 tells the UI to use the browser's own voice instead.
+    """
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="'text' is empty")
+
+    session = _voice_session(request)
+    while (backend := await asyncio.to_thread(session.get_tts_backend)) is not None:
+        try:
+            voice_id, speed = session.voice_for_backend(backend)
+            if body.voice_id:
+                voice_id = body.voice_id
+            if body.speed is not None:
+                speed = body.speed
+            kwargs: Dict[str, Any] = {"output_format": "wav", "speed": speed}
+            if voice_id:
+                kwargs["voice_id"] = voice_id
+            result = await asyncio.to_thread(backend.synthesize, text, **kwargs)
+        except Exception:
+            logger.exception(
+                "TTS backend %r failed", getattr(backend, "backend_id", "?")
+            )
+            session.discard_tts_backend()
+            continue
+        if not result.audio:
+            session.discard_tts_backend()
+            continue
+        return Response(
+            content=result.audio,
+            media_type=_AUDIO_MEDIA_TYPES.get(
+                result.format, "application/octet-stream"
+            ),
+            headers={
+                "X-Voice-Backend": getattr(backend, "backend_id", ""),
+                "X-Voice-Id": result.voice_id or voice_id or "",
+            },
+        )
+
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            "No text-to-speech backend available — install one with "
+            "`uv sync --extra voice` (Kokoro, runs locally)"
+        ),
+    )
+
+
 @speech_router.get("/health")
 async def speech_health(request: Request):
     """Check if a speech backend is available."""
@@ -1037,9 +1110,21 @@ async def speech_health(request: Request):
         if callable(last_error):
             reason = last_error()
 
+    tts: Dict[str, Any] = {"available": False, "backend": None}
+    try:
+        tts_backend = await asyncio.to_thread(_voice_session(request).get_tts_backend)
+        if tts_backend is not None:
+            tts = {
+                "available": True,
+                "backend": getattr(tts_backend, "backend_id", None),
+            }
+    except Exception:
+        logger.exception("TTS health check failed")
+
     return {
         "available": available,
         "backend": backend.backend_id,
+        "tts": tts,
         **({"reason": reason} if reason else {}),
     }
 

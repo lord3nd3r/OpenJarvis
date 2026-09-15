@@ -246,6 +246,7 @@ export function SettingsPage() {
   const serverInfo = useAppStore((s) => s.serverInfo);
   const [healthy, setHealthy] = useState<boolean | null>(null);
   const [speechBackendAvailable, setSpeechBackendAvailable] = useState<boolean | null>(null);
+  const [ttsBackend, setTtsBackend] = useState<string | null | undefined>(undefined);
   const [saved, setSaved] = useState(false);
 
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(() => !isAutoUpdateDisabled());
@@ -324,8 +325,14 @@ export function SettingsPage() {
   useEffect(() => {
     checkHealth().then(setHealthy);
     fetchSpeechHealth()
-      .then((h) => setSpeechBackendAvailable(h.available))
-      .catch(() => setSpeechBackendAvailable(false));
+      .then((h) => {
+        setSpeechBackendAvailable(h.available);
+        setTtsBackend(h.tts?.available ? h.tts.backend || 'available' : null);
+      })
+      .catch(() => {
+        setSpeechBackendAvailable(false);
+        setTtsBackend(null);
+      });
     getMemoryStats()
       .then(setMemoryStats)
       .catch(() => setMemoryStats(null));
@@ -762,6 +769,48 @@ export function SettingsPage() {
                   }}
                 />
               </button>
+            </SettingRow>
+            <SettingRow label="Voice mode (hands-free)" description="Keep the mic open, answer to the wake word, and speak replies">
+              <button
+                onClick={() => { updateSettings({ voiceMode: !settings.voiceMode }); showSaved(); }}
+                className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
+                style={{
+                  background: settings.voiceMode ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                }}
+              >
+                <span
+                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
+                  style={{
+                    transform: settings.voiceMode ? 'translateX(20px)' : 'translateX(0)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }}
+                />
+              </button>
+            </SettingRow>
+            <SettingRow label="Wake word" description='Say this to get its attention, e.g. "yo jarvis, what time is it"'>
+              <input
+                type="text"
+                value={settings.wakeWord}
+                onChange={(e) => { updateSettings({ wakeWord: e.target.value }); showSaved(); }}
+                placeholder="jarvis"
+                className="text-sm px-3 py-1.5 rounded-lg outline-none w-40"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+            </SettingRow>
+            <SettingRow label="Text-to-speech" description={ttsBackend ? `Server voice: ${ttsBackend}` : 'No server voice — replies use the browser voice. Install Kokoro: uv sync --extra voice'}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: ttsBackend ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}
+                />
+                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {ttsBackend === undefined ? 'Checking...' : ttsBackend ? 'Available' : 'Browser fallback'}
+                </span>
+              </div>
             </SettingRow>
             <SettingRow label="Backend status" description="Requires Whisper, Deepgram, or another speech backend">
               <div className="flex items-center gap-2">

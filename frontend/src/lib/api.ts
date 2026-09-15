@@ -394,6 +394,26 @@ export interface SpeechHealth {
   available: boolean;
   backend?: string;
   reason?: string;
+  tts?: { available: boolean; backend?: string | null };
+}
+
+/** Synthesize speech server-side. Resolves null when no TTS backend exists. */
+export async function synthesizeSpeech(text: string): Promise<Blob | null> {
+  const res = await apiFetch(`/v1/speech/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (res.status === 501) return null;
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = typeof body.detail === 'string' ? body.detail : '';
+    } catch {}
+    throw new Error(detail || `Speech synthesis failed: ${res.status}`);
+  }
+  return res.blob();
 }
 
 export async function transcribeAudio(audioBlob: Blob, filename = 'recording.webm'): Promise<TranscriptionResult> {

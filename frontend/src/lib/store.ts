@@ -106,6 +106,9 @@ interface Settings {
   temperature: number;
   maxTokens: number;
   speechEnabled: boolean;
+  // Hands-free: keep the mic open, act on the wake word, speak replies.
+  voiceMode: boolean;
+  wakeWord: string;
 }
 
 function loadSettings(): Settings {
@@ -119,6 +122,8 @@ function loadSettings(): Settings {
     temperature: 0.7,
     maxTokens: 4096,
     speechEnabled: false,
+    voiceMode: false,
+    wakeWord: 'jarvis',
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);

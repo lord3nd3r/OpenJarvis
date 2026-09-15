@@ -12,6 +12,7 @@ import {
 } from '../../lib/chat-telemetry';
 import { MicButton } from './MicButton';
 import { useSpeech } from '../../hooks/useSpeech';
+import { useVoiceMode, type VoiceStatus } from '../../hooks/useVoiceMode';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -90,6 +91,9 @@ export function InputArea() {
   const streamState = useAppStore((s) => s.streamState);
   const messages = useAppStore((s) => s.messages);
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
+  const voiceMode = useAppStore((s) => s.settings.voiceMode);
+  const wakeWord = useAppStore((s) => s.settings.wakeWord);
+  const updateSettings = useAppStore((s) => s.updateSettings);
   const maxTokens = useAppStore((s) => s.settings.maxTokens);
   const temperature = useAppStore((s) => s.settings.temperature);
   const createConversation = useAppStore((s) => s.createConversation);
@@ -171,15 +175,18 @@ export function InputArea() {
     resetStream();
   }, [resetStream]);
 
-  const sendMessage = useCallback(async () => {
-    const content = input.trim();
+  // `override` is a string when voice mode dispatches a spoken command;
+  // button/keyboard callers pass an event (or nothing) and use the textbox.
+  const sendMessage = useCallback(async (override?: unknown) => {
+    const fromVoice = typeof override === 'string';
+    const content = (fromVoice ? override : input).trim();
     if (!content || streamState.isStreaming) return;
     if (!selectedModel) {
       toast.error('Pick a model first (⌘K)');
       return;
     }
 
-    setInput('');
+    if (!fromVoice) setInput('');
 
     let convId = activeId;
     if (!convId) {
@@ -528,6 +535,7 @@ export function InputArea() {
         message: `Response: ${accumulatedContent.length} chars`,
       });
       abortRef.current = null;
+      if (voiceModeRef.current) void voiceRef.current?.speak(accumulatedContent);
 
       // Research path updates session counters optimistically from the
       // `done` event's usage payload — re-fetching here would overwrite
@@ -553,6 +561,28 @@ export function InputArea() {
     temperature,
     maxTokens,
   ]);
+
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+  const voiceModeRef = useRef(voiceMode);
+  voiceModeRef.current = voiceMode;
+
+  const voice = useVoiceMode({
+    enabled: voiceMode && speechAvailable,
+    wakeWord,
+    busy: streamState.isStreaming,
+    onCommand: (text) => sendMessageRef.current(text),
+  });
+  const voiceRef = useRef<typeof voice | null>(null);
+  voiceRef.current = voice;
+
+  const toggleVoiceMode = () => {
+    if (!voiceMode && !speechAvailable) {
+      toast.error('Voice mode needs a speech backend (Whisper) on the server');
+      return;
+    }
+    updateSettings({ voiceMode: !voiceMode });
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -631,6 +661,11 @@ export function InputArea() {
               disabled={micDisabled}
               reason={micReason}
             />
+            <VoiceModeButton
+              active={voiceMode}
+              status={voice.status}
+              onClick={toggleVoiceMode}
+            />
             <button
               onClick={sendMessage}
               disabled={streamState.isStreaming || !input.trim() || modelLoading || !selectedModel}
@@ -647,11 +682,83 @@ export function InputArea() {
         )}
       </div>
       <div className="flex items-center justify-center mt-2 text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>
-        <span>
-          <kbd className="font-mono">Enter</kbd> to send &middot;{' '}
-          <kbd className="font-mono">Shift+Enter</kbd> for new line
-        </span>
+        {voiceMode ? (
+          <VoiceStatusLine
+            status={voice.status}
+            wakeWord={wakeWord}
+            lastHeard={voice.lastHeard}
+            error={voice.error}
+          />
+        ) : (
+          <span>
+            <kbd className="font-mono">Enter</kbd> to send &middot;{' '}
+            <kbd className="font-mono">Shift+Enter</kbd> for new line
+          </span>
+        )}
       </div>
     </div>
+  );
+}
+
+function VoiceModeButton({
+  active,
+  status,
+  onClick,
+}: {
+  active: boolean;
+  status: VoiceStatus;
+  onClick: () => void;
+}) {
+  const live = active && status !== 'off' && status !== 'error';
+  const hot = status === 'attention' || status === 'transcribing' || status === 'thinking';
+  return (
+    <button
+      onClick={onClick}
+      title={active ? 'Voice mode on — click to stop listening' : 'Voice mode: talk hands-free'}
+      className="p-2 rounded-xl transition-all shrink-0 cursor-pointer"
+      style={{
+        background: live ? (hot ? 'var(--color-accent)' : 'var(--color-accent-subtle, var(--color-bg-tertiary))') : 'transparent',
+        color: live ? (hot ? 'white' : 'var(--color-accent)') : 'var(--color-text-secondary)',
+        animation: status === 'speaking' ? 'pulse 1.2s ease-in-out infinite' : 'none',
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <path d="M2 8v0.5M4.5 5.5v5M7 3v10M9.5 5v6M12 6.5v3M14 7.5v1" />
+      </svg>
+    </button>
+  );
+}
+
+function VoiceStatusLine({
+  status,
+  wakeWord,
+  lastHeard,
+  error,
+}: {
+  status: VoiceStatus;
+  wakeWord: string;
+  lastHeard: string;
+  error: string | null;
+}) {
+  const label =
+    status === 'starting' ? 'Starting microphone…'
+    : status === 'listening' ? `Listening — say "${wakeWord}"`
+    : status === 'attention' ? 'Go ahead, I\'m listening'
+    : status === 'transcribing' ? 'Transcribing…'
+    : status === 'thinking' ? 'Thinking…'
+    : status === 'speaking' ? 'Speaking…'
+    : status === 'error' ? (error || 'Voice mode error')
+    : 'Voice mode off';
+  const dot =
+    status === 'error' ? 'var(--color-error)'
+    : status === 'listening' || status === 'attention' ? 'var(--color-success)'
+    : 'var(--color-accent)';
+  const heard = lastHeard.length > 70 ? `${lastHeard.slice(0, 70)}…` : lastHeard;
+  return (
+    <span className="flex items-center gap-2">
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot, display: 'inline-block' }} />
+      <span>{label}</span>
+      {heard && <span style={{ opacity: 0.7 }}>· heard: “{heard}”</span>}
+    </span>
   );
 }
