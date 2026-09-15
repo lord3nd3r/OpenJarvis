@@ -77,6 +77,8 @@ jarvis connect gdrive          # one OAuth covers Gmail / Calendar / Tasks
 jarvis digest --fresh          # generate and play your first briefing
 ```
 
+Prefer a chat window? `./scripts/quickstart.sh` runs the browser app at `localhost:5173` — local models by default, cloud models (OpenAI, Anthropic, Gemini, xAI/Grok with web search, DeepSeek, MiniMax, OpenRouter) once you paste a key in Settings, and hands-free [voice mode](https://open-jarvis.github.io/OpenJarvis/user-guide/voice/) ("yo jarvis, …") with spoken replies.
+
 Per-preset deep dives: [morning digest](https://open-jarvis.github.io/OpenJarvis/user-guide/morning-digest/) · [deep research](https://open-jarvis.github.io/OpenJarvis/user-guide/deep-research/) · [code assistant](https://open-jarvis.github.io/OpenJarvis/user-guide/code-assistant/) · [scheduled monitor](https://open-jarvis.github.io/OpenJarvis/user-guide/scheduled-monitor/) · [chat simple](https://open-jarvis.github.io/OpenJarvis/user-guide/chat-simple/) · or the full [quickstart guide](https://open-jarvis.github.io/OpenJarvis/getting-started/quickstart/).
 
 ### Skills

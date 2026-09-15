@@ -263,6 +263,19 @@ OpenJarvis uses optional extras to keep the base installation lightweight.
 !!! note "Ollama, vLLM, and llama.cpp are HTTP-based"
     These engines have no additional Python dependencies — OpenJarvis communicates over HTTP. You still need the engine software running on your machine.
 
+!!! note "Other cloud providers need no extra"
+    xAI (Grok), DeepSeek, MiniMax, and OpenRouter are called over plain HTTP,
+    so they work with just an API key — entered in the app's Settings or set
+    as an environment variable.
+
+### Speech & Voice
+
+| Extra | Install Command | Description |
+|-------|----------------|-------------|
+| `speech` | `uv sync --extra speech` | Local speech-to-text with faster-whisper — required for the mic button and [Voice Mode](../user-guide/voice.md) |
+| `voice` | `uv sync --extra voice` | Local text-to-speech with Kokoro, so spoken replies use a real voice instead of the browser's |
+| `speech-deepgram` | `uv sync --extra speech-deepgram` | Deepgram cloud speech-to-text |
+
 ### Memory Backends
 
 | Extra | Install Command | Description |

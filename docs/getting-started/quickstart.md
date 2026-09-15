@@ -156,6 +156,27 @@ The script does not automatically source `.env` files. Run `source .env`
 first if that is where you keep the key. Stop any existing OpenJarvis server
 before restarting so it inherits the updated environment.
 
+### Cloud models in the browser
+
+Local models are the default, but the picker (++cmd+k++ / ++ctrl+k++) also
+lists cloud models once a provider key is saved. Enter keys under
+**Settings → API Keys** (OpenAI, Anthropic, Google, OpenRouter, xAI/Grok,
+DeepSeek, MiniMax) or in the picker's **Cloud** tab. In the browser the key is
+kept in the browser's local storage and sent to your local server with each
+request; in the desktop app it goes into the OS keychain. Either way the
+server does not need the key in its environment.
+
+Grok models (`grok-*`) can search the web on their own: requests go through
+xAI's Responses API with the `web_search` tool enabled, and sources come back
+as inline `[1]`-style links.
+
+### Talk to it
+
+Click the waveform button next to the microphone to go hands-free: say
+"yo jarvis, …" and the reply is read back to you. Needs the `speech` extra
+for transcription; install the `voice` extra for a local Kokoro voice. See
+[Voice Mode](../user-guide/voice.md).
+
 To stop all services, press ++ctrl+c++ in the terminal.
 
 !!! tip "Environment variable"
@@ -497,7 +518,14 @@ jarvis serve --host 0.0.0.0 --port 8000 --engine ollama --model qwen3:8b --agent
 |----------|--------|-------------|
 | `/v1/chat/completions` | `POST` | Chat completions (streaming and non-streaming) |
 | `/v1/models` | `GET` | List available models |
+| `/v1/speech/transcribe` | `POST` | Speech-to-text (multipart `file`) |
+| `/v1/speech/synthesize` | `POST` | Text-to-speech; `501` when no TTS backend is installed |
+| `/v1/speech/health` | `GET` | Speech backend status |
 | `/health` | `GET` | Health check |
+
+Cloud provider keys can be passed per request as `X-Cloud-API-<NAME>` headers
+(for example `X-Cloud-API-XAI_API_KEY`) instead of being set in the server's
+environment — this is how the browser app sends the keys saved in its Settings.
 
 ### Use with Any OpenAI-Compatible Client
 

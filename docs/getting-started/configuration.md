@@ -611,6 +611,34 @@ default_agent = "simple"
 
 ---
 
+### `[speech]` — Speech-to-Text and Voice
+
+Used by the push-to-talk mic, hands-free [Voice Mode](../user-guide/voice.md),
+`jarvis` voice chat, and the `/v1/speech/*` routes.
+
+```toml
+[speech]
+backend = "auto"          # "auto", "faster-whisper", "openai", "deepgram"
+model = "base"            # Whisper size: tiny, base, small, medium, large-v3
+language = ""             # empty = auto-detect
+device = "auto"           # "auto", "cpu", "cuda"
+compute_type = "float16"  # "float16", "int8", "float32"
+tts_backend = "kokoro"    # "kokoro", "openai_tts", "cartesia"
+voice_id = "bm_george"    # backend-specific; Kokoro: bm_george, bf_emma, af_heart, ...
+voice_speed = 1.0
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | string | `"auto"` | Speech-to-text backend. `auto` picks the first installed, healthy one. `faster-whisper` runs locally (`uv sync --extra speech`); `openai` and `deepgram` are cloud and need their API keys. |
+| `model` | string | `"base"` | Whisper model size for `faster-whisper`. |
+| `language` | string | `""` | Force a transcription language; empty auto-detects. |
+| `device` | string | `"auto"` | Compute device for local transcription. |
+| `compute_type` | string | `"float16"` | Precision for local transcription; falls back to `int8` where `float16` is unsupported. |
+| `tts_backend` | string | `"kokoro"` | Text-to-speech backend. `kokoro` is local (`uv sync --extra voice`); `openai_tts` and `cartesia` are cloud. If the configured backend is unavailable the others are tried in that order, and the browser app falls back to the browser's own voice. |
+| `voice_id` | string | `"bm_george"` | Voice for `tts_backend` only — IDs are not portable between backends, so a fallback backend uses its own default. |
+| `voice_speed` | float | `1.0` | Playback speed multiplier. |
+
 ### `[security]` — Security Guardrails
 
 Controls the security scanning pipeline for input/output content.
@@ -1116,13 +1144,22 @@ OpenJarvis respects the following environment variables:
 |----------|-------------|
 | `OPENAI_API_KEY` | API key for OpenAI cloud inference. Required for the `cloud` engine with OpenAI models. |
 | `ANTHROPIC_API_KEY` | API key for Anthropic cloud inference. Required for the `cloud` engine with Claude models. |
-| `GOOGLE_API_KEY` | API key for Google Gemini inference. Required for the `google` engine. |
+| `GOOGLE_API_KEY` / `GEMINI_API_KEY` | API key for Google Gemini inference. Required for the `google` engine. |
+| `OPENROUTER_API_KEY` | API key for OpenRouter. Required for `openrouter/...` and other `vendor/model` IDs. |
 | `MINIMAX_API_KEY` | API key for MiniMax cloud inference. Required for the `cloud` engine with MiniMax models (MiniMax-M3, MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, MiniMax-M2.5-highspeed). |
 | `XAI_API_KEY` | API key for xAI (Grok) cloud inference. Required for the `cloud` engine with Grok models (grok-4.6, grok-4.5, grok-4.3, the grok-4.20 variants, grok-build-0.1). |
 | `DEEPSEEK_API_KEY` | API key for DeepSeek cloud inference. Required for the `cloud` engine with DeepSeek models (deepseek-v4-flash, deepseek-v4-pro). |
 | `TAVILY_API_KEY` | API key for the Tavily web search engine. Optional — when set, `auto` engine selection prefers Tavily. |
 | `YOUDOTCOM_API_KEY` | API key for the You.com web search engine. Optional — raises the keyless free-tier limits and enables You.com Contents extraction for URL queries. |
 | `OPENJARVIS_WEB_SEARCH_ENGINE` | Web search engine for the `web_search` tool: `auto` (default), `youcom`, `tavily`, or `duckduckgo`. |
+
+!!! note "Cloud keys without environment variables"
+    The browser and desktop apps do not need these variables set on the
+    server. Keys entered under **Settings → API Keys** are stored by the app
+    (browser local storage, or the OS keychain on desktop) and sent to the
+    local server with each request as `X-Cloud-API-<NAME>` headers. Keys from
+    the environment or `~/.openjarvis/cloud-keys.env` are used when no header
+    is present.
 
 ## Next Steps
 
