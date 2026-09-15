@@ -85,8 +85,8 @@ jobs:
           echo "Dispatching pypi-publish.yml @ ${TAG}"
           gh workflow run pypi-publish.yml \
             --ref "${TAG}" \
-            -f tag="${TAG}"
+            -f tag="${TAG}" || true
           echo "Dispatching desktop.yml @ ${TAG}"
           gh workflow run desktop.yml \
             --ref "${TAG}" \
-            -f tag="${TAG}"
+            -f tag="${TAG}" || true
