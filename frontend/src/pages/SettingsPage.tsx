@@ -281,6 +281,7 @@ export function SettingsPage() {
   });
 
   const [srcKind, setSrcKind] = useState<InferenceSource['kind']>('ollama');
+  const [cloudProvider, setCloudProvider] = useState<string>('');
   const [customHost, setCustomHost] = useState('http://localhost:1234/v1');
   const [customModel, setCustomModel] = useState('');
   const [customEngine, setCustomEngine] = useState('lmstudio');
@@ -300,14 +301,19 @@ export function SettingsPage() {
     try {
       if (srcKind === 'custom') {
         await setInferenceSource({ kind: 'custom', host: customHost, model: customModel, engine: customEngine, apiKey: customKey || undefined });
+        setSrcMsg('Saved — restart the app to apply.');
+      } else if (srcKind === 'cloud' && cloudProvider) {
+        // Cloud provider selection (web mode supported)
+        await setInferenceSource({ kind: cloudProvider as any, model: cloudProvider });
+        setSrcMsg('Cloud provider selected.');
       } else {
         await setInferenceSource({ kind: 'ollama' });
+        setSrcMsg('Saved — restart the app to apply.');
       }
-      setSrcMsg('Saved — restart the app to apply.');
     } catch (e: any) {
       setSrcMsg(e?.message ?? 'Failed to save.');
     }
-  }, [srcKind, customHost, customModel, customEngine, customKey]);
+  }, [srcKind, cloudProvider, customHost, customModel, customEngine, customKey]);
 
   useEffect(() => {
     checkHealth().then(setHealthy);
@@ -485,14 +491,31 @@ export function SettingsPage() {
             <SettingRow label="Source" description="Where the app runs models. Applies after restart.">
               <select
                 value={srcKind}
-                onChange={(e) => { setSrcKind(e.target.value as InferenceSource['kind']); setSrcMsg(''); }}
+                onChange={(e) => { setSrcKind(e.target.value as any); setSrcMsg(''); }}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
                 style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
               >
                 <option value="ollama">Bundled Ollama (default)</option>
                 <option value="custom">Custom OpenAI-compatible server</option>
+                {!isTauri() && <option value="cloud">Cloud provider</option>}
               </select>
             </SettingRow>
+            {srcKind === 'cloud' && !isTauri() && (
+              <SettingRow label="Provider" description="Select a cloud provider with API key configured">
+                <select value={cloudProvider} onChange={(e) => { setCloudProvider(e.target.value); setSrcMsg(''); }}
+                  className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
+                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
+                  <option value="">Select provider...</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="xai">xAI (Grok)</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="minimax">MiniMax</option>
+                </select>
+              </SettingRow>
+            )}
             {srcKind === 'custom' && (
               <>
                 <SettingRow label="Server URL" description="e.g. LM Studio: http://localhost:1234/v1">

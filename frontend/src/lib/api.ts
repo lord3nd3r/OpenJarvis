@@ -1168,7 +1168,7 @@ export async function denyAction(actionId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export type InferenceSource = {
-  kind: 'ollama' | 'custom';
+  kind: 'ollama' | 'custom' | 'cloud' | 'openai' | 'anthropic' | 'gemini' | 'openrouter' | 'xai' | 'deepseek' | 'minimax';
   model?: string;
   host?: string;
   engine?: string;
@@ -1183,6 +1183,14 @@ export async function getInferenceSource(): Promise<InferenceSource> {
       throw new Error(e?.message ?? e ?? 'Failed to read inference source');
     }
   }
+  // Web mode: read from localStorage
+  try {
+    const stored = localStorage.getItem('openjarvis-inference-source');
+    if (stored) {
+      const parsed = JSON.parse(stored) as InferenceSource;
+      return parsed;
+    }
+  } catch {}
   return { kind: 'ollama' };
 }
 
@@ -1190,21 +1198,40 @@ export async function setInferenceSource(
   src: InferenceSource & { apiKey?: string },
   options: { pending?: boolean } = {},
 ): Promise<void> {
-  if (!isTauri()) throw new Error('Inference source is configurable in the desktop app only.');
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke<void>('set_inference_source', {
-      kind: src.kind,
-      model: src.model ?? null,
-      host: src.host ?? null,
-      engine: src.engine ?? null,
-      apiKey: src.apiKey ?? null,
-      pending: options.pending ?? null,
-    });
-  } catch (e: any) {
-    // Surface the backend's actionable error strings (e.g. "A server URL is
-    // required…", "Could not store the API key…") as proper Error instances.
-    throw new Error(e?.message ?? e ?? 'Failed to save inference source');
+  // Desktop-only sources (ollama, custom servers)
+  const desktopOnlySources = src.kind === 'ollama' || src.kind === 'custom';
+  if (!isTauri() && desktopOnlySources) {
+    throw new Error('Local inference sources (Ollama, custom servers) are configurable in the desktop app only.');
+  }
+
+  if (isTauri()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke<void>('set_inference_source', {
+        kind: src.kind,
+        model: src.model ?? null,
+        host: src.host ?? null,
+        engine: src.engine ?? null,
+        apiKey: src.apiKey ?? null,
+        pending: options.pending ?? null,
+      });
+    } catch (e: any) {
+      // Surface the backend's actionable error strings (e.g. "A server URL is
+      // required…", "Could not store the API key…") as proper Error instances.
+      throw new Error(e?.message ?? e ?? 'Failed to save inference source');
+    }
+  } else {
+    // Web mode: store cloud provider preference in localStorage
+    try {
+      localStorage.setItem('openjarvis-inference-source', JSON.stringify({
+        kind: src.kind,
+        model: src.model ?? null,
+        host: src.host ?? null,
+        engine: src.engine ?? null,
+      }));
+    } catch (e: any) {
+      throw new Error(e?.message ?? e ?? 'Failed to save inference preference');
+    }
   }
 }
 
